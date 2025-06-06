@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import './style.css';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { loadClassroom } from './scenes/Classroom.js';
+import { FirstPersonControls } from './controls/FirstPersonControls.js';
 
 let scene, camera, renderer, controls;
 
@@ -33,10 +33,8 @@ scene.add(axesHelper);
   // Classroom setup
   loadClassroom(scene);
 
-  // Orbit controls
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
+  controls = new FirstPersonControls(camera, document.body);
+  controls.enable(scene);
 
   window.addEventListener('resize', onWindowResize);
 }
