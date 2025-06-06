@@ -24,7 +24,7 @@ export class FirstPersonControls {
   }
 
   enable(scene) {
-    scene.add(this.controls.getObject());
+    scene.add(this.controls.object);
 
     this.domElement.addEventListener('click', () => {
       this.controls.lock();
@@ -77,7 +77,7 @@ export class FirstPersonControls {
   if (this.move.right) moveVector.sub(right);
 
   moveVector.normalize().multiplyScalar(this.speed * delta);
-  this.controls.getObject().position.add(moveVector);
+  this.controls.object.position.add(moveVector);
 }
 
   }

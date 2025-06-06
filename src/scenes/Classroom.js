@@ -3,13 +3,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { loadLaptopInstance } from './Laptop.js';
 import { loadWhiteboard } from './Whiteboard.js';
 
-export function loadClassroom(scene) {
+export function loadClassroom(scene, gameState) {
   const classroomGroup = new THREE.Group();
   scene.add(classroomGroup);
 
   const loader = new GLTFLoader();
   const modelPath = '/models/classroom_desk.glb';
-
   const roomWidth = 15;
   const roomDepth = 15;
   const roomHeight = 4;
@@ -28,7 +27,6 @@ export function loadClassroom(scene) {
   const brickTexture = textureLoader.load('/textures/yellow_brick.jpg');
   brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping;
   brickTexture.repeat.set(4, 2);
-
   const wallMaterial = new THREE.MeshStandardMaterial({ map: brickTexture });
   const wallThickness = 0.1;
 
@@ -45,7 +43,7 @@ export function loadClassroom(scene) {
     classroomGroup.add(mesh);
   }
 
-  // Light
+  // Lights
   const light = new THREE.PointLight(0xffffff, 1.5, 30);
   light.position.set(0, roomHeight - 0.1, 0);
   light.castShadow = true;
@@ -91,14 +89,15 @@ export function loadClassroom(scene) {
         const deskBox = new THREE.Box3().setFromObject(clone);
         const deskTopY = deskBox.max.y - clone.position.y;
 
-        loadLaptopInstance().then(({ group: laptop }) => {
+        loadLaptopInstance(gameState).then(({ group: laptop, renderer }) => {
           laptop.position.y = deskTopY;
           clone.add(laptop);
+          scene.userData.canvasRenderers ||= [];
+          scene.userData.canvasRenderers.push(renderer);
         });
       }
     }
   });
 
-  // Whiteboard
-  loadWhiteboard(scene, roomWidth);
+  loadWhiteboard(scene, roomWidth, gameState);
 }

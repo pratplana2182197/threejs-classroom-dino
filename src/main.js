@@ -1,40 +1,55 @@
 import * as THREE from 'three';
 import './style.css';
-import { loadClassroom } from './scenes/Classroom.js';
 import { FirstPersonControls } from './controls/FirstPersonControls.js';
+import { loadClassroom } from './scenes/Classroom.js';
+import { DinoGameState } from './game/DinoGameState.js';
 
-let scene, camera, renderer, controls;
+let scene, camera, renderer, controls, gameState;
 
+const clock = new THREE.Clock();
 init();
 animate();
 
 function init() {
+  // Scene
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xbfd1e5); // Sky blue
-  // Coordinate axes helper: red = X, green = Y, blue = Z
-const axesHelper = new THREE.AxesHelper(5); // 5 units long
-scene.add(axesHelper);
+  scene.background = new THREE.Color(0xbfd1e5);
 
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.set(10, 8, 10);
-  camera.lookAt(0, 1, 0);
+  // Camera
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(2, 2, 5);
 
+  // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.body.appendChild(renderer.domElement);
 
-  // Classroom setup
-  loadClassroom(scene);
-
+  // Controls
   controls = new FirstPersonControls(camera, document.body);
   controls.enable(scene);
+
+  // Shared game state
+  gameState = new DinoGameState();
+
+  // Load classroom with shared game state
+  loadClassroom(scene, gameState);
+
+  document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    gameState.jump();
+  }
+  if (e.code === 'ArrowDown') {
+    gameState.dino.ducking = true;
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'ArrowDown') {
+    gameState.dino.ducking = false;
+  }
+});
+
 
   window.addEventListener('resize', onWindowResize);
 }
@@ -47,6 +62,13 @@ function onWindowResize() {
 
 function animate() {
   requestAnimationFrame(animate);
+
+  const delta = clock.getDelta();
   controls.update();
+  gameState.update(delta);
+
+  // Render screen outputs
+  scene.userData.canvasRenderers?.forEach(r => r.render(renderer));
+
   renderer.render(scene, camera);
 }

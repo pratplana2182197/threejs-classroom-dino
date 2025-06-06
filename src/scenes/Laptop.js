@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { CanvasRenderer } from '../render/CanvasRenderer.js';
 
 const loader = new GLTFLoader();
 
-export async function loadLaptopInstance() {
+export async function loadLaptopInstance(gameState) {
   return new Promise((resolve, reject) => {
     loader.load('/models/laptop.glb', (gltf) => {
       const laptop = gltf.scene;
@@ -15,9 +16,8 @@ export async function loadLaptopInstance() {
       box.getSize(size);
       box.getCenter(center);
 
-      // Center the model at origin and lift it so base is at y = 0
-      laptop.position.set(-center.x, -box.min.y, -center.z);
-
+const yOffset = -0.038;
+    laptop.position.set(-center.x, -box.min.y + yOffset, -center.z);     
       // Optional: uniformly scale to fit desk
       const targetWidth = 0.6; // meters
       const scale = targetWidth / size.x;
@@ -29,7 +29,7 @@ export async function loadLaptopInstance() {
 
       // Apply desk-relative transform here:
       wrapper.rotation.y = -Math.PI / 2; // rotate to face forward
-      wrapper.position.set(0.55, 0, 0); // tweak X, Y, Z here if needed
+      wrapper.position.set(0.55, -10, 0); // tweak X, Y, Z here if needed
 
       // Add a screen anchor for future projection
       const screenAnchor = new THREE.Object3D();
@@ -37,7 +37,18 @@ export async function loadLaptopInstance() {
       screenAnchor.position.set(0, size.y * 0.6, -size.z * 0.05);
       laptop.add(screenAnchor);
 
-      resolve({ group: wrapper, screenAnchor });
+
+      const canvasRenderer = new CanvasRenderer(gameState);
+      const screen = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.575, 0.35),
+        new THREE.MeshBasicMaterial({ map: canvasRenderer.getTexture() })
+      );
+      screen.position.set(0, 0.23 + yOffset, 0.437);
+      wrapper.add(screen);
+
+
+      resolve({ group: wrapper,screenAnchor, renderer: canvasRenderer });
+
     }, undefined, reject);
   });
 }
