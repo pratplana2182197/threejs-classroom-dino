@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { BoxHelper } from 'three';
+import { ScoreLabel } from '../game/ScoreLabel.js';
 
 export class CanvasRenderer {
   constructor(gameState, width = 1024, height = 512) {
@@ -7,48 +9,71 @@ export class CanvasRenderer {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xffffff);
 
-    this.camera = new THREE.OrthographicCamera(0, 20, 5, 0, 0.1, 100);
+    this.camera = new THREE.OrthographicCamera(-2, 18, 5, 0, 0.1, 100);
     this.camera.position.z = 10;
 
     this.renderTarget = new THREE.WebGLRenderTarget(width, height);
     this.renderTarget.texture.encoding = THREE.sRGBEncoding;
 
     this.models = {};
-    this.mixers = [];
     this.activeObstacles = [];
-
     this.loader = new GLTFLoader();
     this.loaded = false;
+
+    this.dinoBoxHelper = null;
+    this.scoreLabel = new ScoreLabel(this.scene);
 
     this._initScene();
   }
 
   async _initScene() {
-    this.models.dino = await this._loadModel('/models/dino.glb', true);
+    this.models.dino = await this._loadModel('/models/dino.glb');
     this.models.dino_duck = await this._loadModel('/models/dino_duck.glb');
     this.models.cactus = await this._loadModel('/models/cactus.glb');
-    this.models.bird = await this._loadModel('/models/bird.glb', true);
+    this.models.bird = await this._loadModel('/models/bird.glb');
 
     this.scene.add(this.models.dino.object);
     this.activeDino = this.models.dino;
 
+    this._storeBoundingSizes();
+
+    this.dinoBoxHelper = new BoxHelper(this.activeDino.object, 0x00ff00);
+    this.scene.add(this.dinoBoxHelper);
+
     this.loaded = true;
   }
 
-  async _loadModel(path, animate = false) {
+  _storeBoundingSizes() {
+    const sizeOf = (object) => {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      return { width: size.x, height: size.y };
+    };
+
+    Object.assign(this.gameState.dino, sizeOf(this.models.dino.object));
+    Object.assign(this.gameState.dino, {
+      duckWidth: sizeOf(this.models.dino_duck.object).width,
+      duckHeight: sizeOf(this.models.dino_duck.object).height
+    });
+
+    this.gameState.obstacleDimensions.cactus = sizeOf(this.models.cactus.object);
+    this.gameState.obstacleDimensions.bird = sizeOf(this.models.bird.object);
+  }
+
+  async _loadModel(path) {
     return new Promise((resolve, reject) => {
-      this.loader.load(path, (gltf) => {
-        const object = gltf.scene;
-        object.scale.setScalar(0.7);
-
-        const model = { object: object };
-
-        if (animate && gltf.animations.length > 0) {
-          model.animClip = gltf.animations[0];
-        }
-
-        resolve(model);
-      }, undefined, reject);
+      this.loader.load(
+        path,
+        (gltf) => {
+          const object = gltf.scene;
+          object.scale.setScalar(0.7);
+          object.visible = true;
+          resolve({ object });
+        },
+        undefined,
+        reject
+      );
     });
   }
 
@@ -57,6 +82,11 @@ export class CanvasRenderer {
     if (this.activeDino !== newModel) {
       this.scene.remove(this.activeDino.object);
       this.scene.add(newModel.object);
+
+      this.scene.remove(this.dinoBoxHelper);
+      this.dinoBoxHelper = new BoxHelper(newModel.object, 0x00ff00);
+      this.scene.add(this.dinoBoxHelper);
+
       this.activeDino = newModel;
     }
   }
@@ -64,57 +94,65 @@ export class CanvasRenderer {
   updateSceneFromGameState(deltaTime) {
     if (!this.loaded) return;
 
-    // Dino model switching
     const useDuck = this.gameState.dino.ducking;
     this._switchDinoModel(useDuck);
 
-    const dinoY = this.gameState.dino.y + (useDuck ? -0.2 : 0); // slightly lower when ducking
-    this.activeDino.object.position.set(this.gameState.dino.x + 2, dinoY, 0);
+    const yOffset = this.gameState.dino.ducking ? -0.7 : 0;
+    const dinoY = this.gameState.dino.y + yOffset;
+    this.activeDino.object.position.set(this.gameState.dino.x, dinoY, 0);
 
-    // Update mixers (bird only)
-    this.mixers.forEach((mixer) => mixer.update(deltaTime));
+    if (this.dinoBoxHelper) this.dinoBoxHelper.update();
 
-    // Sync obstacles with game state
-    while (this.activeObstacles.length < this.gameState.obstacles.length) {
-      const data = this.gameState.obstacles[this.activeObstacles.length];
-      const model = this.models[data.type];
-
-      if (!model || !model.object) {
-        console.warn(`Missing model for obstacle type: ${data.type}`);
-        continue;
-      }
-
-      const clone = model.object.clone(true);
-      const entry = { mesh: clone, type: data.type };
-
-      if (data.type === 'bird' && model.animClip) {
-        const mixer = new THREE.AnimationMixer(clone);
-        const action = mixer.clipAction(model.animClip);
-        action.play();
-        this.mixers.push(mixer);
-        entry.mixer = mixer;
-      }
-
-      this.scene.add(clone);
-      this.activeObstacles.push(entry);
-    }
-
-    // Update positions
-    for (let i = 0; i < this.gameState.obstacles.length; i++) {
-      const obstacle = this.gameState.obstacles[i];
-      const entry = this.activeObstacles[i];
-      entry.mesh.position.set(obstacle.x, obstacle.y, 0);
-    }
-
-    // Remove excess obstacles
     while (this.activeObstacles.length > this.gameState.obstacles.length) {
       const entry = this.activeObstacles.pop();
-      if (entry.mixer) {
-        const idx = this.mixers.indexOf(entry.mixer);
-        if (idx !== -1) this.mixers.splice(idx, 1);
-      }
       this.scene.remove(entry.mesh);
+      if (entry.boxHelper) this.scene.remove(entry.boxHelper);
     }
+
+    for (let i = 0; i < this.gameState.obstacles.length; i++) {
+      const data = this.gameState.obstacles[i];
+
+      if (i >= this.activeObstacles.length) {
+        this._createObstacle(i, data);
+      } else if (this.activeObstacles[i].type !== data.type) {
+        this._replaceObstacle(i, data);
+      } else {
+        const entry = this.activeObstacles[i];
+        entry.mesh.position.set(data.x, data.y, 0);
+        if (entry.boxHelper) entry.boxHelper.update();
+      }
+    }
+
+    // Update score display
+    this.scoreLabel.update(this.gameState.score);
+  }
+
+  _createObstacle(index, data) {
+    const model = this.models[data.type];
+    if (!model) {
+      console.warn(`Unknown obstacle type: ${data.type}`);
+      return;
+    }
+
+    const clone = model.object.clone(true);
+    clone.position.set(data.x, data.y, 0);
+
+    const boxHelper = new BoxHelper(clone, 0xff00ff);
+    this.scene.add(clone);
+    this.scene.add(boxHelper);
+
+    this.activeObstacles[index] = {
+      mesh: clone,
+      type: data.type,
+      boxHelper
+    };
+  }
+
+  _replaceObstacle(index, data) {
+    const old = this.activeObstacles[index];
+    this.scene.remove(old.mesh);
+    if (old.boxHelper) this.scene.remove(old.boxHelper);
+    this._createObstacle(index, data);
   }
 
   render(renderer) {
@@ -128,5 +166,24 @@ export class CanvasRenderer {
 
   getTexture() {
     return this.renderTarget.texture;
+  }
+
+  dispose() {
+    this.activeObstacles.forEach(entry => {
+      this.scene.remove(entry.mesh);
+      if (entry.boxHelper) this.scene.remove(entry.boxHelper);
+    });
+    this.activeObstacles = [];
+
+    Object.values(this.models).forEach(model => {
+      if (model.object) {
+        this.scene.remove(model.object);
+      }
+    });
+
+    if (this.dinoBoxHelper) this.scene.remove(this.dinoBoxHelper);
+    if (this.scoreLabel) this.scoreLabel.dispose();
+
+    this.renderTarget.dispose();
   }
 }
