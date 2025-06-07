@@ -51,6 +51,7 @@ export class DinoGameState {
   }
 
   update(deltaTime) {
+    this._time += deltaTime;
     if (this.gameOver) return;
 
     this._time += deltaTime;

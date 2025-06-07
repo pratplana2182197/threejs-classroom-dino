@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { BoxHelper } from 'three';
 import { ScoreLabel } from '../game/ScoreLabel.js';
+import { RestartPromptLabel } from '../game/RestartPromptLabel.js';
 
 export class CanvasRenderer {
   constructor(gameState, width = 1024, height = 512) {
@@ -21,7 +22,11 @@ export class CanvasRenderer {
     this.loaded = false;
 
     this.dinoBoxHelper = null;
-    this.scoreLabel = new ScoreLabel(this.scene);
+    this.scoreLabel = null;
+    this.restartPrompt = null;
+
+    this.deathTime = null;
+    this.allowRestart = false;
 
     this._initScene();
   }
@@ -39,6 +44,10 @@ export class CanvasRenderer {
 
     this.dinoBoxHelper = new BoxHelper(this.activeDino.object, 0x00ff00);
     this.scene.add(this.dinoBoxHelper);
+
+    this.scoreLabel = new ScoreLabel(this.scene, (font) => {
+      this.restartPrompt = new RestartPromptLabel(this.scene, font);
+    });
 
     this.loaded = true;
   }
@@ -97,7 +106,7 @@ export class CanvasRenderer {
     const useDuck = this.gameState.dino.ducking;
     this._switchDinoModel(useDuck);
 
-    const yOffset = this.gameState.dino.ducking ? -0.7 : 0;
+    const yOffset = useDuck ? -0.7 : 0;
     const dinoY = this.gameState.dino.y + yOffset;
     this.activeDino.object.position.set(this.gameState.dino.x, dinoY, 0);
 
@@ -123,16 +132,27 @@ export class CanvasRenderer {
       }
     }
 
-    // Update score display
-    this.scoreLabel.update(this.gameState.score);
+    this.scoreLabel?.update(this.gameState.score, this.gameState.gameOver);
+
+    if (this.gameState.gameOver) {
+      if (this.deathTime === null) this.deathTime = this.gameState._time;
+      const timeSinceDeath = this.gameState._time - this.deathTime;
+
+      if (this.restartPrompt) {
+        this.restartPrompt.updateBlink(timeSinceDeath);
+      }
+
+      this.allowRestart = timeSinceDeath > 2;
+    } else {
+      this.restartPrompt?.hide();
+      this.deathTime = null;
+      this.allowRestart = false;
+    }
   }
 
   _createObstacle(index, data) {
     const model = this.models[data.type];
-    if (!model) {
-      console.warn(`Unknown obstacle type: ${data.type}`);
-      return;
-    }
+    if (!model) return;
 
     const clone = model.object.clone(true);
     clone.position.set(data.x, data.y, 0);
@@ -155,13 +175,27 @@ export class CanvasRenderer {
     this._createObstacle(index, data);
   }
 
-  render(renderer) {
+  render(renderer, deltaTime) {
     if (!this.loaded) return;
-    const delta = this.gameState._time > 0 ? this.gameState._time : 0.016;
-    this.updateSceneFromGameState(delta);
+    this.updateSceneFromGameState(deltaTime);
     renderer.setRenderTarget(this.renderTarget);
     renderer.render(this.scene, this.camera);
     renderer.setRenderTarget(null);
+  }
+
+  reset() {
+    this.deathTime = null;
+    this.allowRestart = false;
+
+    this.activeObstacles.forEach((entry) => {
+      this.scene.remove(entry.mesh);
+      entry.mesh.geometry?.dispose();
+      entry.mesh.material?.dispose();
+      if (entry.boxHelper) this.scene.remove(entry.boxHelper);
+    });
+    this.activeObstacles = [];
+
+    this.restartPrompt?.hide();
   }
 
   getTexture() {
@@ -169,21 +203,20 @@ export class CanvasRenderer {
   }
 
   dispose() {
-    this.activeObstacles.forEach(entry => {
+    this.activeObstacles.forEach((entry) => {
       this.scene.remove(entry.mesh);
+      entry.mesh.geometry?.dispose();
+      entry.mesh.material?.dispose();
       if (entry.boxHelper) this.scene.remove(entry.boxHelper);
     });
-    this.activeObstacles = [];
 
-    Object.values(this.models).forEach(model => {
-      if (model.object) {
-        this.scene.remove(model.object);
-      }
+    Object.values(this.models).forEach((model) => {
+      if (model?.object) this.scene.remove(model.object);
     });
 
     if (this.dinoBoxHelper) this.scene.remove(this.dinoBoxHelper);
-    if (this.scoreLabel) this.scoreLabel.dispose();
-
+    this.scoreLabel?.dispose();
+    this.restartPrompt?.dispose(this.scene);
     this.renderTarget.dispose();
   }
 }

@@ -37,10 +37,21 @@ function init() {
 
   document.addEventListener('keydown', (e) => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
-    gameState.jump();
+    const canvasRenderers = scene.userData.canvasRenderers || [];
+    const anyAllowRestart = canvasRenderers.some(r => r.allowRestart);
+
+    if (gameState.gameOver && anyAllowRestart) {
+      gameState.reset();
+      canvasRenderers.forEach(r => r.reset()); // ✅ reset each renderer
+    } else if (!gameState.gameOver) {
+      gameState.jump();
+    }
   }
+
   if (e.code === 'ArrowDown') {
-    gameState.dino.ducking = true;
+    if (!gameState.gameOver) {
+      gameState.dino.ducking = true;
+    }
   }
 });
 
@@ -67,8 +78,8 @@ function animate() {
   controls.update();
   gameState.update(delta);
 
-  // Render screen outputs
-  scene.userData.canvasRenderers?.forEach(r => r.render(renderer));
+  // Render offscreen canvases (each with their own scene)
+  scene.userData.canvasRenderers?.forEach(r => r.render(renderer, delta)); // ✅ FIX: pass delta
 
   renderer.render(scene, camera);
 }
