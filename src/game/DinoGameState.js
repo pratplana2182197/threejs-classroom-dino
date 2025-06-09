@@ -11,7 +11,7 @@ export class DinoGameState {
       x: 0,
       y: this.groundY,
       vy: 0,
-      width: 1,         // To be updated by CanvasRenderer
+      width: 1,
       height: 1,
       duckWidth: 1,
       duckHeight: 1,
@@ -19,10 +19,8 @@ export class DinoGameState {
       ducking: false
     };
 
-    // Obstacles (array of { x, y, type, width, height })
+    // Obstacles
     this.obstacles = [];
-
-    // Obstacle dimensions (injected by CanvasRenderer)
     this.obstacleDimensions = {
       cactus: { width: 0.6, height: 1.0 },
       bird: { width: 0.8, height: 0.5 }
@@ -31,11 +29,15 @@ export class DinoGameState {
     // Game speed and timing
     this.speed = 5;
     this.spawnTimer = 0;
-    this.spawnInterval = 2; // seconds
+    this.spawnInterval = 2;
 
-    // Internal timer
+    // Score and time
     this._time = 0;
     this.score = 0;
+
+    // Fixed timestep logic
+    this._accumulator = 0;
+    this._fixedStep = 1 / 60; // 60 updates per second
   }
 
   reset() {
@@ -46,21 +48,31 @@ export class DinoGameState {
     this.obstacles = [];
     this._time = 0;
     this.spawnTimer = 0;
-    this.gameOver = false;
     this.score = 0;
+    this.speed = 5;
+    this.spawnInterval = 2;
+    this._accumulator = 0;
+    this.gameOver = false;
   }
 
   update(deltaTime) {
-    this._time += deltaTime;
+    this._accumulator += deltaTime;
+    while (this._accumulator >= this._fixedStep) {
+      this._updateFixed(this._fixedStep);
+      this._accumulator -= this._fixedStep;
+    }
+  }
+
+  _updateFixed(dt) {
+    this._time += dt;
     if (this.gameOver) return;
 
-    this._time += deltaTime;
-    this.spawnTimer += deltaTime;
-    this.score += deltaTime * 10;
+    this.spawnTimer += dt;
+    this.score += dt * 10;
 
     if (this.dino.isJumping) {
-      this.dino.vy += this.gravity * deltaTime;
-      this.dino.y += this.dino.vy * deltaTime;
+      this.dino.vy += this.gravity * dt;
+      this.dino.y += this.dino.vy * dt;
 
       if (this.dino.y <= this.groundY) {
         this.dino.y = this.groundY;
@@ -69,7 +81,7 @@ export class DinoGameState {
       }
     }
 
-    this.obstacles.forEach((o) => o.x -= this.speed * deltaTime);
+    this.obstacles.forEach((o) => o.x -= this.speed * dt);
     this.obstacles = this.obstacles.filter((o) => o.x > -2);
 
     if (this.spawnTimer >= this.spawnInterval) {
@@ -85,17 +97,16 @@ export class DinoGameState {
   spawnObstacle() {
     const type = Math.random() < 0.7 ? 'cactus' : 'bird';
     const dimensions = this.obstacleDimensions[type];
-    const y = type === 'cactus' ? this.groundY : this.groundY + 1;
+    const y = type === 'cactus' ? this.groundY : this.groundY + 0.5;
 
-        this.obstacles.push({
-        x: 20,
-        y,
-        type,
-        width: dimensions.width,
-        height: dimensions.height,
-        yOffset: type === 'bird' ? dimensions.height * 0.5 : 0
-        });
-
+    this.obstacles.push({
+      x: 20,
+      y,
+      type,
+      width: dimensions.width,
+      height: dimensions.height,
+      yOffset: type === 'bird' ? dimensions.height * 0.5 : 0
+    });
   }
 
   jump() {
@@ -112,9 +123,8 @@ export class DinoGameState {
     }
   }
 
-
   checkCollisions() {
-      const COLLISION_MARGIN = 0.08;
+    const COLLISION_MARGIN = 0.1;
 
     const dino = this.dino;
     const dinoWidth = dino.ducking ? dino.duckWidth : dino.width;
@@ -126,22 +136,22 @@ export class DinoGameState {
     const dinoTop = dinoBottom + dinoHeight - 2 * COLLISION_MARGIN;
 
     for (const obstacle of this.obstacles) {
-    const isBird = obstacle.type === 'bird';
-    const obBottom = obstacle.y + (isBird ? obstacle.height * 0.5 : 0) + COLLISION_MARGIN;
-    const obHeight = obstacle.height * (isBird ? 0.5 : 1);
-    const obTop = obBottom + obHeight - 2 * COLLISION_MARGIN;
-    const obLeft = obstacle.x + COLLISION_MARGIN;
-    const obRight = obLeft + obstacle.width - 2 * COLLISION_MARGIN;
+      const isBird = obstacle.type === 'bird';
+      const obBottom = obstacle.y + (isBird ? obstacle.height * 0.5 : 0) + COLLISION_MARGIN;
+      const obHeight = obstacle.height * (isBird ? 0.5 : 1);
+      const obTop = obBottom + obHeight - 2 * COLLISION_MARGIN;
+      const obLeft = obstacle.x + COLLISION_MARGIN;
+      const obRight = obLeft + obstacle.width - 2 * COLLISION_MARGIN;
 
-    if (
+      if (
         dinoRight > obLeft &&
         dinoLeft < obRight &&
         dinoTop > obBottom &&
         dinoBottom < obTop
-    ) {
+      ) {
         this.gameOver = true;
         return;
-        }
+      }
     }
   }
 }

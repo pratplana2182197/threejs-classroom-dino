@@ -1,52 +1,48 @@
 import * as THREE from 'three';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 export class ScoreLabel {
-  constructor(scene, onFontLoaded) {
+  constructor(scene, onReady) {
     this.scene = scene;
-    this.mesh = null;
-    this.font = null;
+    this.sprite = this._createTextSprite('SCORE: 0');
+    this.scene.add(this.sprite);
     this._score = -1;
-
-    const loader = new FontLoader();
-    loader.load('/fonts/helvetiker_bold.typeface.json', (font) => {
-      this.font = font;
-      if (onFontLoaded) onFontLoaded(font);
-    });
+    if (onReady) onReady();
   }
 
   update(score, isGameOver = false) {
     const rounded = Math.floor(score);
-    if (!this.font || isGameOver || rounded === this._score) return;
+    if (isGameOver || rounded === this._score) return;
 
     this._score = rounded;
-    if (this.mesh) {
-      this.scene.remove(this.mesh);
-      this.mesh.geometry.dispose();
-      this.mesh.material.dispose();
-    }
+    const newText = `SCORE: ${rounded}`;
+    this.scene.remove(this.sprite);
+    this.sprite = this._createTextSprite(newText);
+    this.sprite.position.set(8, 4.0, 0.1);
+    this.scene.add(this.sprite);
+  }
 
-    const geometry = new TextGeometry(`SCORE: ${rounded}`, {
-      font: this.font,
-      size: 0.5,
-      height: 0.2,
-    });
-    geometry.computeBoundingBox();
-    geometry.center();
+  _createTextSprite(text) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 512;
+    canvas.height = 128;
 
-    const material = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
-    this.mesh = new THREE.Mesh(geometry, material);
-    this.mesh.position.set(8, 4.0, 0.1); // ⬅ Lowered Y position
-    this.scene.add(this.mesh);
+    ctx.fillStyle = 'black';
+    ctx.font = '64px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(5, 1.2, 1);
+    return sprite;
   }
 
   dispose() {
-    if (this.mesh) {
-      this.scene.remove(this.mesh);
-      this.mesh.geometry.dispose();
-      this.mesh.material.dispose();
-      this.mesh = null;
-    }
+    this.scene.remove(this.sprite);
+    this.sprite.material.map.dispose();
+    this.sprite.material.dispose();
   }
 }

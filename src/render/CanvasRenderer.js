@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { BoxHelper } from 'three';
 import { ScoreLabel } from '../game/ScoreLabel.js';
 import { RestartPromptLabel } from '../game/RestartPromptLabel.js';
 
@@ -21,12 +20,14 @@ export class CanvasRenderer {
     this.loader = new GLTFLoader();
     this.loaded = false;
 
-    this.dinoBoxHelper = null;
     this.scoreLabel = null;
     this.restartPrompt = null;
 
     this.deathTime = null;
     this.allowRestart = false;
+
+    this.dinoBoxHelper = null;
+    this.debug = true;
 
     this._initScene();
   }
@@ -42,11 +43,13 @@ export class CanvasRenderer {
 
     this._storeBoundingSizes();
 
-    this.dinoBoxHelper = new BoxHelper(this.activeDino.object, 0x00ff00);
-    this.scene.add(this.dinoBoxHelper);
+    if (this.debug) {
+      this.dinoBoxHelper = new THREE.BoxHelper(this.activeDino.object, 0x00ff00);
+      this.scene.add(this.dinoBoxHelper);
+    }
 
-    this.scoreLabel = new ScoreLabel(this.scene, (font) => {
-      this.restartPrompt = new RestartPromptLabel(this.scene, font);
+    this.scoreLabel = new ScoreLabel(this.scene, () => {
+      this.restartPrompt = new RestartPromptLabel(this.scene);
     });
 
     this.loaded = true;
@@ -92,9 +95,15 @@ export class CanvasRenderer {
       this.scene.remove(this.activeDino.object);
       this.scene.add(newModel.object);
 
-      this.scene.remove(this.dinoBoxHelper);
-      this.dinoBoxHelper = new BoxHelper(newModel.object, 0x00ff00);
-      this.scene.add(this.dinoBoxHelper);
+      if (this.dinoBoxHelper) {
+        this.scene.remove(this.dinoBoxHelper);
+        this.dinoBoxHelper = null;
+      }
+
+      if (this.debug) {
+        this.dinoBoxHelper = new THREE.BoxHelper(newModel.object, 0x00ff00);
+        this.scene.add(this.dinoBoxHelper);
+      }
 
       this.activeDino = newModel;
     }
@@ -110,7 +119,9 @@ export class CanvasRenderer {
     const dinoY = this.gameState.dino.y + yOffset;
     this.activeDino.object.position.set(this.gameState.dino.x, dinoY, 0);
 
-    if (this.dinoBoxHelper) this.dinoBoxHelper.update();
+    if (this.debug && this.dinoBoxHelper) {
+      this.dinoBoxHelper.update();
+    }
 
     while (this.activeObstacles.length > this.gameState.obstacles.length) {
       const entry = this.activeObstacles.pop();
@@ -120,7 +131,6 @@ export class CanvasRenderer {
 
     for (let i = 0; i < this.gameState.obstacles.length; i++) {
       const data = this.gameState.obstacles[i];
-
       if (i >= this.activeObstacles.length) {
         this._createObstacle(i, data);
       } else if (this.activeObstacles[i].type !== data.type) {
@@ -128,7 +138,7 @@ export class CanvasRenderer {
       } else {
         const entry = this.activeObstacles[i];
         entry.mesh.position.set(data.x, data.y, 0);
-        if (entry.boxHelper) entry.boxHelper.update();
+        if (this.debug && entry.boxHelper) entry.boxHelper.update();
       }
     }
 
@@ -137,11 +147,7 @@ export class CanvasRenderer {
     if (this.gameState.gameOver) {
       if (this.deathTime === null) this.deathTime = this.gameState._time;
       const timeSinceDeath = this.gameState._time - this.deathTime;
-
-      if (this.restartPrompt) {
-        this.restartPrompt.updateBlink(timeSinceDeath);
-      }
-
+      this.restartPrompt?.updateBlink(timeSinceDeath);
       this.allowRestart = timeSinceDeath > 2;
     } else {
       this.restartPrompt?.hide();
@@ -156,10 +162,13 @@ export class CanvasRenderer {
 
     const clone = model.object.clone(true);
     clone.position.set(data.x, data.y, 0);
-
-    const boxHelper = new BoxHelper(clone, 0xff00ff);
     this.scene.add(clone);
-    this.scene.add(boxHelper);
+
+    let boxHelper = null;
+    if (this.debug) {
+      boxHelper = new THREE.BoxHelper(clone, 0xff00ff);
+      this.scene.add(boxHelper);
+    }
 
     this.activeObstacles[index] = {
       mesh: clone,
@@ -189,8 +198,6 @@ export class CanvasRenderer {
 
     this.activeObstacles.forEach((entry) => {
       this.scene.remove(entry.mesh);
-      entry.mesh.geometry?.dispose();
-      entry.mesh.material?.dispose();
       if (entry.boxHelper) this.scene.remove(entry.boxHelper);
     });
     this.activeObstacles = [];
@@ -205,8 +212,6 @@ export class CanvasRenderer {
   dispose() {
     this.activeObstacles.forEach((entry) => {
       this.scene.remove(entry.mesh);
-      entry.mesh.geometry?.dispose();
-      entry.mesh.material?.dispose();
       if (entry.boxHelper) this.scene.remove(entry.boxHelper);
     });
 

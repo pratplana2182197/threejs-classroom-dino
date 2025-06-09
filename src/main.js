@@ -75,11 +75,15 @@ function animate() {
   requestAnimationFrame(animate);
 
   const delta = clock.getDelta();
-  controls.update();
-  gameState.update(delta);
 
-  // Render offscreen canvases (each with their own scene)
-  scene.userData.canvasRenderers?.forEach(r => r.render(renderer, delta)); // ✅ FIX: pass delta
+  controls.update(); // ✅ camera controls
+
+  gameState.update(delta); // ✅ this now uses a fixed timestep internally
+
+  scene.userData.canvasRenderers?.forEach(r => {
+    r.render(renderer, delta); // 🟢 only handles drawing now
+  });
 
   renderer.render(scene, camera);
 }
+

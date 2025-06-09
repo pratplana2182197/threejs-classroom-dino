@@ -1,36 +1,44 @@
 import * as THREE from 'three';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 export class RestartPromptLabel {
-  constructor(scene, font) {
-    const geometry = new TextGeometry('PRESS SPACE TO START', {
-      font,
-      size: 0.35,
-      height: 0.1,
-    });
-    geometry.computeBoundingBox();
-    geometry.center();
-
-    const material = new THREE.MeshBasicMaterial({ color: 0x222222, side: THREE.DoubleSide });
-    this.mesh = new THREE.Mesh(geometry, material);
-    this.mesh.position.set(8, 3.2, 0.1);
-    this.mesh.visible = false;
-
-    scene.add(this.mesh);
+  constructor(scene) {
     this.scene = scene;
+    this.sprite = this._createTextSprite('PRESS SPACE TO START');
+    this.sprite.position.set(8, 3.2, 0.1);
+    this.sprite.visible = false;
+    this.scene.add(this.sprite);
   }
 
   updateBlink(time) {
-    this.mesh.visible = Math.floor(time * 2) % 2 === 0;
+    this.sprite.visible = Math.floor(time * 2) % 2 === 0;
   }
 
   hide() {
-    this.mesh.visible = false;
+    this.sprite.visible = false;
+  }
+
+  _createTextSprite(text) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1024;
+    canvas.height = 256;
+
+    ctx.fillStyle = 'black';
+    ctx.font = '72px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(10, 2.5, 1);
+    return sprite;
   }
 
   dispose() {
-    this.scene.remove(this.mesh);
-    this.mesh.geometry.dispose();
-    this.mesh.material.dispose();
+    this.scene.remove(this.sprite);
+    this.sprite.material.map.dispose();
+    this.sprite.material.dispose();
   }
 }
