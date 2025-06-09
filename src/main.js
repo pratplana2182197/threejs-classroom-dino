@@ -3,8 +3,9 @@ import './style.css';
 import { FirstPersonControls } from './controls/FirstPersonControls.js';
 import { loadClassroom } from './scenes/Classroom.js';
 import { DinoGameState } from './game/DinoGameState.js';
+import { DinoRoom } from './scenes/DinoRoom.js';
 
-let scene, camera, renderer, controls, gameState;
+let scene, camera, renderer, controls, gameState, dinoRoom;
 
 const clock = new THREE.Clock();
 init();
@@ -34,6 +35,9 @@ function init() {
 
   // Load classroom with shared game state
   loadClassroom(scene, gameState);
+
+  dinoRoom = new DinoRoom(gameState);
+  scene.add(dinoRoom.mesh);
 
   document.addEventListener('keydown', (e) => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -79,7 +83,7 @@ function animate() {
   controls.update(); // ✅ camera controls
 
   gameState.update(delta); // ✅ this now uses a fixed timestep internally
-
+   dinoRoom.update();
   scene.userData.canvasRenderers?.forEach(r => {
     r.render(renderer, delta); // 🟢 only handles drawing now
   });

@@ -4,7 +4,7 @@ export class DinoGameState {
     this.gravity = -20;
     this.jumpVelocity = 10;
     this.groundY = 0;
-    this.gameOver = false;
+    this.gameOver = true;
 
     // Dino state
     this.dino = {
