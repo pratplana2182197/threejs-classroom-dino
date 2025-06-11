@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { loadLaptopInstance } from './Laptop.js';
 import { loadWhiteboard } from './Whiteboard.js';
 
-export function loadClassroom(scene, gameState) {
+export function loadClassroom(scene, gameState, sharedTexture) {
   const classroomGroup = new THREE.Group();
   scene.add(classroomGroup);
 
@@ -13,7 +13,6 @@ export function loadClassroom(scene, gameState) {
   const roomDepth = 15;
   const roomHeight = 4;
 
-  // Ground
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(roomWidth, roomDepth),
     new THREE.MeshStandardMaterial({ color: 0xdddddd })
@@ -22,14 +21,13 @@ export function loadClassroom(scene, gameState) {
   floor.receiveShadow = true;
   classroomGroup.add(floor);
 
-  // Walls
   const textureLoader = new THREE.TextureLoader();
   const brickTexture = textureLoader.load('/textures/yellow_brick.jpg');
   brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping;
   brickTexture.repeat.set(4, 2);
   const wallMaterial = new THREE.MeshStandardMaterial({ map: brickTexture });
-  const wallThickness = 0.1;
 
+  const wallThickness = 0.1;
   const walls = [
     { size: [roomWidth, roomHeight, wallThickness], pos: [0, roomHeight / 2, -roomDepth / 2] },
     { size: [roomWidth, roomHeight, wallThickness], pos: [0, roomHeight / 2, roomDepth / 2] },
@@ -43,7 +41,6 @@ export function loadClassroom(scene, gameState) {
     classroomGroup.add(mesh);
   }
 
-  // Lights
   const light = new THREE.PointLight(0xffffff, 1.5, 30);
   light.position.set(0, roomHeight - 0.1, 0);
   light.castShadow = true;
@@ -59,7 +56,6 @@ export function loadClassroom(scene, gameState) {
   bulb.position.copy(light.position);
   classroomGroup.add(bulb);
 
-  // Desks + Laptops
   loader.load(modelPath, (gltf) => {
     const deskScene = gltf.scene;
     const box = new THREE.Box3().setFromObject(deskScene);
@@ -85,19 +81,22 @@ export function loadClassroom(scene, gameState) {
 
         classroomGroup.add(clone);
 
-        // Laptop
         const deskBox = new THREE.Box3().setFromObject(clone);
         const deskTopY = deskBox.max.y - clone.position.y;
 
-        loadLaptopInstance(gameState).then(({ group: laptop, renderer }) => {
-          laptop.position.y = deskTopY;
-          clone.add(laptop);
-          scene.userData.canvasRenderers ||= [];
-          scene.userData.canvasRenderers.push(renderer);
-        });
+        // loadLaptopInstance(gameState, sharedTexture).then(({ group: laptop, renderer }) => {
+        //   laptop.position.y = deskTopY;
+        //   clone.add(laptop);
+        //   scene.userData.canvasRenderers ||= [];
+        //   scene.userData.canvasRenderers.push(renderer);
+        // });
+loadLaptopInstance(sharedTexture).then(({ group: laptop }) => {
+  laptop.position.y = deskTopY;
+  clone.add(laptop);
+});
       }
     }
   });
 
-  loadWhiteboard(scene, roomWidth, gameState);
+  loadWhiteboard(scene, roomWidth, sharedTexture);
 }

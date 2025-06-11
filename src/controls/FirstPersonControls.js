@@ -16,7 +16,7 @@ export class FirstPersonControls {
 
     this.velocity = new THREE.Vector3();
     this.direction = new THREE.Vector3();
-    this.speed = 5;
+    this.speed = 10;
 
     this.clock = new THREE.Clock();
 

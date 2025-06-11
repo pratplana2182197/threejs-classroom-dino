@@ -82,7 +82,7 @@ export class DinoGameState {
     }
 
     this.obstacles.forEach((o) => o.x -= this.speed * dt);
-    this.obstacles = this.obstacles.filter((o) => o.x > -2);
+    this.obstacles = this.obstacles.filter((o) => o.x > -10);
 
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnObstacle();
@@ -100,7 +100,7 @@ export class DinoGameState {
     const y = type === 'cactus' ? this.groundY : this.groundY + 0.5;
 
     this.obstacles.push({
-      x: 20,
+      x: 12,
       y,
       type,
       width: dimensions.width,
