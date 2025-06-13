@@ -5,11 +5,38 @@ import { loadClassroom } from './scenes/Classroom.js';
 import { DinoGameState } from './game/DinoGameState.js';
 import { DinoRoom } from './scenes/DinoRoom.js';
 import { PortalRenderer2D } from './render/PortalRenderer2D.js';
-import { getLocalUVOnMesh, mapUVToMesh, startTeleportTransition, updateTransitionOverlay, getClosestScreen } from './utils/utils.js';
+import { getLocalUVOnMesh, mapUVToMesh, startTeleportTransition, updateTransitionOverlay, getClosestScreen, clampCameraToBounds } from './utils/utils.js';
 
 let scene, camera, renderer, controls, gameState, dinoRoom, portalRendererDino, portalRendererClassroom
-, origin, destination, screenMeshes;
+, origin, destination, screenMeshes, isTeleporting = false;
+
+
 let currentRoom = "classroom";
+
+const CLASSROOM_BOUNDS = {
+  minX: -7.2,
+  maxX: 7.2,
+  minY: 0.8,
+  maxY: 3.8,
+  minZ: -7.2,
+  maxZ: 7.2,
+};
+
+const DINOROOM_BOUNDS = {
+  minX: 24.5,
+  maxX: 35.5,
+  minY: 0.9,
+  maxY: 10.8,
+  minZ: -9.8,
+  maxZ: 9.8,
+};
+
+
+
+
+
+
+
 const clock = new THREE.Clock();
 
 init().then(animate);
@@ -156,6 +183,7 @@ viewCam.lookAt(new THREE.Vector3(-7.5, 1.2, 0)); // X = -7.5 if roomWidth = 15
     }
 
     startTeleportTransition(controls, newWorldPos, 1.5);
+    isTeleporting = true;
     currentRoom = fromClassroom ? "dinoRoom" : "classroom";
   }
 });
@@ -189,9 +217,13 @@ function animate() {
 
   portalRendererDino.render(renderer);
 // portalRendererClassroom.render(renderer); // safe: only renders if scene + camera set
-
+  if (!isTeleporting) {
+  clampCameraToBounds(camera, currentRoom === 'classroom' ? CLASSROOM_BOUNDS : DINOROOM_BOUNDS);
+}
   // Main render pass
   renderer.render(scene, camera);
 
-  updateTransitionOverlay(delta, renderer, scene, camera);
+  updateTransitionOverlay(delta, renderer, scene, camera, () => {
+  isTeleporting = false;
+});
 }

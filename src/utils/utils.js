@@ -35,7 +35,7 @@ export function startTeleportTransition(controls, newPosition, duration = 1.2) {
 }
 
 // Call this every frame from your main loop
-export function updateTransitionOverlay(delta, renderer, scene, camera) {
+export function updateTransitionOverlay(delta, renderer, scene, camera, onFinish = null) {
   if (!transitionState.active) return;
 
   transitionState.timer += delta;
@@ -54,6 +54,7 @@ export function updateTransitionOverlay(delta, renderer, scene, camera) {
     if (t >= 1) {
       overlayMaterial.opacity = 0;
       transitionState.active = false;
+      if (onFinish) onFinish(); 
     }
   }
 
@@ -117,4 +118,13 @@ export function getClosestScreen(camera, screens) {
 
   return closest;
 }
+
+export function clampCameraToBounds(camera, bounds) {
+  const pos = camera.position;
+  pos.x = THREE.MathUtils.clamp(pos.x, bounds.minX, bounds.maxX);
+  pos.y = THREE.MathUtils.clamp(pos.y, bounds.minY, bounds.maxY);
+  pos.z = THREE.MathUtils.clamp(pos.z, bounds.minZ, bounds.maxZ);
+}
+
+
 
