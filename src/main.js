@@ -6,8 +6,8 @@ import { DinoGameState } from './game/DinoGameState.js';
 import { DinoRoom } from './scenes/DinoRoom.js';
 import { DinoRoomRenderer2D } from './render/DinoRoomRenderer2D.js';
 import { getLocalUVOnMesh, mapUVToMesh, startTeleportTransition, updateTransitionOverlay} from './utils/utils.js';
-let scene, camera, renderer, controls, gameState, dinoRoom, renderer2D;
-
+let scene, camera, renderer, controls, gameState, dinoRoom, renderer2D, origin, destination;
+let currentRoom = "classroom";
 const clock = new THREE.Clock();
 init().then(animate);
 
@@ -21,7 +21,7 @@ async function init() {
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   document.body.appendChild(renderer.domElement);
 
@@ -59,10 +59,20 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       const whiteboard = scene.getObjectByName('Whiteboard');
       const dinoWindow = dinoRoom.mesh.getObjectByName('DinoWindow');
 
-      const { u, v } = getLocalUVOnMesh(whiteboard, cameraPos);
-      const newWorldPos = mapUVToMesh(dinoWindow, u, v);
-      startTeleportTransition(controls, newWorldPos, 1.5); // 1.5 seconds = 0.75 in + 0.75 out
+      if (currentRoom == "classroom") {
+        origin = whiteboard;
+        destination = dinoWindow;
+      }
+      else {
+        origin = dinoWindow;
+        destination = whiteboard;
+      }
 
+      let offset = destination == dinoWindow ? -0.2 : 0.2;
+      const { u, v } = getLocalUVOnMesh(origin, cameraPos);
+      const newWorldPos = mapUVToMesh(destination, u, v, offset);
+      startTeleportTransition(controls, newWorldPos, 1.5);
+      currentRoom = currentRoom === "classroom" ? "dinoRoom" : "classroom";
       // controls.controls.getObject().position.copy(newWorldPos);
     }
   });

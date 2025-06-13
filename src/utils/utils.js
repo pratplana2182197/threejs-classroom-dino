@@ -81,7 +81,7 @@ export function getLocalUVOnMesh(mesh, worldPos) {
 
 
 
-export function mapUVToMesh(mesh, u, v) {
+export function mapUVToMesh(mesh, u, v, offset) {
   const geom = mesh.geometry;
   if (!geom.boundingBox) geom.computeBoundingBox();
 
@@ -93,7 +93,7 @@ export function mapUVToMesh(mesh, u, v) {
   const localY = box.min.y + v * size.y;
   const localZ = 0; // center of plane
 
-  const localPos = new THREE.Vector3(localX, localY, localZ -0.2);
+  const localPos = new THREE.Vector3(localX, localY, localZ + offset);
   return mesh.localToWorld(localPos);
 }
 
