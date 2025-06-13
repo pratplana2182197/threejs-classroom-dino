@@ -115,13 +115,13 @@ export class DinoRoom {
   emissive: 0x111111,             // slight glow in darkness
   emissiveIntensity: 3,
   transparent: true,
-  side: THREE.BackSide
+  side: THREE.FrontSide
 });
 
-  const windowMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(windowWidth, windowHeight ),
-    windowMaterial
-    );
+  const geometry = new THREE.PlaneGeometry(windowWidth, windowHeight);
+geometry.scale(-1, 1, 1);  // Flip horizontally
+
+const windowMesh = new THREE.Mesh(geometry, windowMaterial);
 
   // Rotate and position it perfectly inside the window cut-out
   windowMesh.rotation.y = -Math.PI / 2;
