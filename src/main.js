@@ -5,10 +5,12 @@ import { loadClassroom } from './scenes/Classroom.js';
 import { DinoGameState } from './game/DinoGameState.js';
 import { DinoRoom } from './scenes/DinoRoom.js';
 import { PortalRenderer2D } from './render/PortalRenderer2D.js';
-import { getLocalUVOnMesh, mapUVToMesh, startTeleportTransition, updateTransitionOverlay, getClosestScreen, clampCameraToBounds } from './utils/utils.js';
+import { getLocalUVOnMesh, mapUVToMesh, startTeleportTransition, 
+  updateTransitionOverlay, getClosestScreen, clampCameraToBounds, updateTeleportPrompt } from './utils/utils.js';
 
 let scene, camera, renderer, controls, gameState, dinoRoom, portalRendererDino, portalRendererClassroom
-, origin, destination, screenMeshes, isTeleporting = false;
+, origin, destination, screenMeshes, isTeleporting = false, dinoWindow = null;
+;
 
 
 let currentRoom = "classroom";
@@ -113,6 +115,8 @@ portalRendererClassroom = new PortalRenderer2D(); // will be configured at telep
   screenMeshes = await loadClassroom(scene, gameState, portalRendererDino.getTexture());
   // Add DinoRoom to the scene
   scene.add(dinoRoom.mesh);
+  dinoWindow = dinoRoom.mesh.getObjectByName('DinoWindow');
+
 
   // Key events
 let lastTeleportOrigin = null;
@@ -131,9 +135,10 @@ document.addEventListener('keydown', (e) => {
   }
 
   if (e.code === 'KeyE') {
+    const prompt = document.getElementById('teleportPrompt');
+    if (prompt.style.display !== 'block') return; 
     const cameraPos = controls.controls.object.position;
     const closestScreen = getClosestScreen(camera, screenMeshes);
-    const dinoWindow = dinoRoom.mesh.getObjectByName("DinoWindow");
 
     const fromClassroom = currentRoom === "classroom";
 
@@ -214,7 +219,7 @@ function animate() {
   const camPos = controls.controls.object.position;
 // console.log(`Camera position: x=${camPos.x.toFixed(2)}, y=${camPos.y.toFixed(2)}, z=${camPos.z.toFixed(2)}`);
 
-
+  updateTeleportPrompt(camera, screenMeshes, currentRoom, dinoWindow);
   portalRendererDino.render(renderer);
 // portalRendererClassroom.render(renderer); // safe: only renders if scene + camera set
   if (!isTeleporting) {

@@ -127,4 +127,52 @@ export function clampCameraToBounds(camera, bounds) {
 }
 
 
+export function updateTeleportPrompt(camera, screenMeshes, currentRoom, dinoWindow = null) {
+  const prompt = document.getElementById('teleportPrompt');
+  if (!prompt) return;
 
+  const cam = camera;
+  const camPos = cam.position;
+  const camDir = new THREE.Vector3();
+  cam.getWorldDirection(camDir);
+
+  const minDistance = 2;
+  const minDot = 0.5;
+  let message = null;
+
+  if (currentRoom === 'classroom') {
+    for (const screen of screenMeshes) {
+      const screenPos = screen.getWorldPosition(new THREE.Vector3());
+      const toScreen = screenPos.clone().sub(camPos);
+      const distance = toScreen.length();
+      const facing = camDir.dot(toScreen.clone().normalize());
+
+      const correctSide = camPos.x < screenPos.x;
+      const lookingRight = camDir.x > 0.2;
+
+      if (distance < minDistance && facing > minDot && correctSide && lookingRight) {
+        message = 'Press E to enter the game';
+        break;
+      }
+    }
+  } else if (currentRoom === 'dinoRoom' && dinoWindow) {
+    const screenPos = dinoWindow.getWorldPosition(new THREE.Vector3());
+    const toScreen = screenPos.clone().sub(camPos);
+    const distance = toScreen.length();
+    const facing = camDir.dot(toScreen.clone().normalize());
+
+    const correctSide = camPos.x > screenPos.x;
+    const lookingLeft = camDir.x < -0.2;
+
+    if (distance < minDistance && facing > minDot && correctSide && lookingLeft) {
+      message = 'Press E to return to the classroom';
+    }
+  }
+
+  if (message) {
+    prompt.innerText = message;
+    prompt.style.display = 'block';
+  } else {
+    prompt.style.display = 'none';
+  }
+}
