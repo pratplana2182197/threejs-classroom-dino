@@ -88,61 +88,78 @@ portalRendererClassroom = new PortalRenderer2D(); // will be configured at telep
   scene.add(dinoRoom.mesh);
 
   // Key events
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-      if (gameState.gameOver) {
-        gameState.reset();
-      } else {
-        gameState.jump();
-      }
+let lastTeleportOrigin = null;
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    if (gameState.gameOver) {
+      gameState.reset();
+    } else {
+      gameState.jump();
+    }
+  }
+
+  if (e.code === 'ArrowDown' && !gameState.gameOver) {
+    gameState.dino.ducking = true;
+  }
+
+  if (e.code === 'KeyE') {
+    const cameraPos = controls.controls.object.position;
+    const closestScreen = getClosestScreen(camera, screenMeshes);
+    const dinoWindow = dinoRoom.mesh.getObjectByName("DinoWindow");
+
+    const fromClassroom = currentRoom === "classroom";
+
+    origin = fromClassroom ? closestScreen : dinoWindow;
+    destination = fromClassroom ? dinoWindow : lastTeleportOrigin || closestScreen;
+
+    if (!origin || !destination) {
+      console.warn("Teleport aborted: missing origin or destination.");
+      return;
     }
 
-    if (e.code === 'ArrowDown' && !gameState.gameOver) {
-      gameState.dino.ducking = true;
+    // Remember last origin if entering DinoRoom
+    if (fromClassroom) lastTeleportOrigin = origin;
+
+    const offset = (destination === dinoWindow) ? -0.2 : 0.2;
+    const { u, v } = getLocalUVOnMesh(origin, cameraPos);
+    const newWorldPos = mapUVToMesh(destination, u, v, offset);
+
+    if (fromClassroom) {
+      // === Build correctly oriented camera ===
+
+
+const viewCam = new THREE.PerspectiveCamera(50, 512 / 384, 0.1, 100);
+
+// Position: above the screen we're coming from
+const originWorldPos = origin.getWorldPosition(new THREE.Vector3());
+viewCam.position.copy(originWorldPos.clone().add(new THREE.Vector3(0, 0.6, 0)));
+
+// Look toward the **back wall**, at fixed point in space (low X)
+viewCam.lookAt(new THREE.Vector3(-7.5, 1.2, 0)); // X = -7.5 if roomWidth = 15
+
+      // === Prevent feedback loop ===
+      const originalMap = origin.material.map;
+      origin.material.map = null;
+      origin.material.needsUpdate = true;
+
+      portalRendererClassroom.setScene(scene);
+      portalRendererClassroom.setCamera(viewCam);
+      portalRendererClassroom.render(renderer);
+
+      origin.material.map = originalMap;
+      origin.material.needsUpdate = true;
+
+      const dinoWindow = dinoRoom.mesh.getObjectByName("DinoWindow");
+      dinoWindow.material.map = portalRendererClassroom.getTexture();
+      dinoWindow.material.needsUpdate = true;
     }
-
-    if (e.code === 'KeyE') {
-      const cameraPos = controls.controls.object.position;
-      const closestScreen = getClosestScreen(camera, screenMeshes);
-
-      const whiteboard = scene.getObjectByName('Whiteboard');
-      const dinoWindow = dinoRoom.mesh.getObjectByName('DinoWindow');
-
-      const fromClassroom = currentRoom === "classroom";
-      // origin = fromClassroom ? whiteboard : dinoWindow;
-      // destination = fromClassroom ? dinoWindow : whiteboard;
-      origin = fromClassroom ? closestScreen : dinoWindow;
-      destination = fromClassroom ? dinoWindow : closestScreen;
-
-      const offset = (destination === dinoWindow) ? -0.2 : 0.2;
-      const { u, v } = getLocalUVOnMesh(origin, cameraPos);
-      const newWorldPos = mapUVToMesh(destination, u, v, offset);
-
-
-
-      if (fromClassroom) {
-        const viewCam = new THREE.PerspectiveCamera(50, 512 / 384, 0.1, 100);
-        viewCam.position.copy(origin.getWorldPosition(new THREE.Vector3()));
-        viewCam.position.add(new THREE.Vector3(0, 0.8, 0.2));
-        viewCam.lookAt(new THREE.Vector3(0, 1, 0));
-
-        portalRendererClassroom.setScene(scene);
-        portalRendererClassroom.setCamera(viewCam);
-        portalRendererClassroom.render(renderer);  // ✅ this was missing!
-
-        dinoWindow.material.map = portalRendererClassroom.getTexture();
-        dinoWindow.material.needsUpdate = true;
-
-}
-
-    // Optional: store it somewhere to skip redundant rebuilds
-    // dinoRoom.mesh.getObjectByName('DinoWindow').material.map = portalRendererClassroom.getTexture();
 
     startTeleportTransition(controls, newWorldPos, 1.5);
-    currentRoom = (currentRoom === "classroom") ? "dinoRoom" : "classroom";
-}
+    currentRoom = fromClassroom ? "dinoRoom" : "classroom";
+  }
+});
 
-  });
 
   document.addEventListener('keyup', (e) => {
     if (e.code === 'ArrowDown') {
@@ -165,6 +182,10 @@ function animate() {
   controls.update();
   gameState.update(delta);
   dinoRoom.update();
+
+  const camPos = controls.controls.object.position;
+// console.log(`Camera position: x=${camPos.x.toFixed(2)}, y=${camPos.y.toFixed(2)}, z=${camPos.z.toFixed(2)}`);
+
 
   portalRendererDino.render(renderer);
 // portalRendererClassroom.render(renderer); // safe: only renders if scene + camera set
