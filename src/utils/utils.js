@@ -44,7 +44,7 @@ export function updateTransitionOverlay(delta, renderer, scene, camera) {
     const t = transitionState.timer / transitionState.half;
     overlayMaterial.opacity = Math.min(t, 1);
     if (t >= 1) {
-      transitionState.controls.controls.getObject().position.copy(transitionState.newPosition);
+      transitionState.controls.controls.object.position.copy(transitionState.newPosition);
       transitionState.phase = 'fadeOut';
       transitionState.timer = 0;
     }
@@ -98,5 +98,23 @@ export function mapUVToMesh(mesh, u, v, offset) {
 }
 
 
+export function getClosestScreen(camera, screens) {
+  if (!camera || !screens?.length) return null;
 
+  let minDist = Infinity;
+  let closest = null;
+
+  const camPos = camera.getWorldPosition(new THREE.Vector3());
+
+  for (const screen of screens) {
+    const screenPos = screen.getWorldPosition(new THREE.Vector3());
+    const dist = camPos.distanceTo(screenPos);
+    if (dist < minDist) {
+      minDist = dist;
+      closest = screen;
+    }
+  }
+
+  return closest;
+}
 

@@ -3,7 +3,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { loadLaptopInstance } from './Laptop.js';
 import { loadWhiteboard } from './Whiteboard.js';
 
-export function loadClassroom(scene, gameState, sharedTexture) {
+export async function loadClassroom(scene, gameState, sharedTexture) {
+  const screenRefs = [];
+
   const classroomGroup = new THREE.Group();
   scene.add(classroomGroup);
 
@@ -13,6 +15,7 @@ export function loadClassroom(scene, gameState, sharedTexture) {
   const roomDepth = 15;
   const roomHeight = 4;
 
+  // === Floor ===
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(roomWidth, roomDepth),
     new THREE.MeshStandardMaterial({ color: 0xdddddd })
@@ -21,6 +24,7 @@ export function loadClassroom(scene, gameState, sharedTexture) {
   floor.receiveShadow = true;
   classroomGroup.add(floor);
 
+  // === Walls ===
   const textureLoader = new THREE.TextureLoader();
   const brickTexture = textureLoader.load('/textures/yellow_brick.jpg');
   brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping;
@@ -41,6 +45,7 @@ export function loadClassroom(scene, gameState, sharedTexture) {
     classroomGroup.add(mesh);
   }
 
+  // === Lighting ===
   const light = new THREE.PointLight(0xffffff, 1.5, 30);
   light.position.set(0, roomHeight - 0.1, 0);
   light.castShadow = true;
@@ -56,47 +61,56 @@ export function loadClassroom(scene, gameState, sharedTexture) {
   bulb.position.copy(light.position);
   classroomGroup.add(bulb);
 
-  loader.load(modelPath, (gltf) => {
-    const deskScene = gltf.scene;
-    const box = new THREE.Box3().setFromObject(deskScene);
-    const minY = box.min.y;
-
-    const rows = 3;
-    const cols = 4;
-    const spacing = 2.5;
-    const xOffset = -((cols - 1) * spacing) / 2;
-    const zOffset = -((rows - 1) * spacing) / 2;
-
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        const clone = deskScene.clone(true);
-        clone.position.set(j * spacing + xOffset, -minY, i * spacing + zOffset);
-
-        clone.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-
-        classroomGroup.add(clone);
-
-        const deskBox = new THREE.Box3().setFromObject(clone);
-        const deskTopY = deskBox.max.y - clone.position.y;
-
-        // loadLaptopInstance(gameState, sharedTexture).then(({ group: laptop, renderer }) => {
-        //   laptop.position.y = deskTopY;
-        //   clone.add(laptop);
-        //   scene.userData.canvasRenderers ||= [];
-        //   scene.userData.canvasRenderers.push(renderer);
-        // });
-loadLaptopInstance(sharedTexture).then(({ group: laptop }) => {
-  laptop.position.y = deskTopY;
-  clone.add(laptop);
-});
-      }
-    }
+  // === Load desks ===
+  const deskScene = await new Promise((resolve, reject) => {
+    loader.load(modelPath, gltf => resolve(gltf.scene), undefined, reject);
   });
 
-  loadWhiteboard(scene, roomWidth, sharedTexture);
+  const box = new THREE.Box3().setFromObject(deskScene);
+  const minY = box.min.y;
+
+  const rows = 3;
+  const cols = 4;
+  const spacing = 2.5;
+  const xOffset = -((cols - 1) * spacing) / 2;
+  const zOffset = -((rows - 1) * spacing) / 2;
+
+  const laptopPromises = [];
+
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      const clone = deskScene.clone(true);
+      clone.position.set(j * spacing + xOffset, -minY, i * spacing + zOffset);
+
+      clone.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      classroomGroup.add(clone);
+
+      const deskBox = new THREE.Box3().setFromObject(clone);
+      const deskTopY = deskBox.max.y - clone.position.y;
+
+      // Load laptop and track its screen
+      const laptopPromise = loadLaptopInstance(sharedTexture).then((laptop) => {
+      laptop.position.y = deskTopY;
+      clone.add(laptop);
+      if (laptop.screen) screenRefs.push(laptop.screen); // ✅ access from wrapper
+    });
+
+      laptopPromises.push(laptopPromise);
+    }
+  }
+
+  // Wait for all laptops
+  await Promise.all(laptopPromises);
+
+  // === Load whiteboard and add its screen ===
+  const whiteboard = loadWhiteboard(scene, roomWidth, sharedTexture);
+  if (whiteboard?.screen) screenRefs.push(whiteboard.screen);
+
+  return screenRefs;
 }

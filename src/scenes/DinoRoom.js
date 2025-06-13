@@ -108,18 +108,20 @@ export class DinoRoom {
 
 
     const windowMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    side: THREE.BackSide, // ← only visible from inside the room
-    transparent: true,
-    opacity: 1.0,
-    emissive: 0xffffff,
-    emissiveIntensity: 0.4 // make it glow slightly like a screen
-  });
+  color: 0xffffff,                // base color: white
+  map: null,                      // will be set to the portal texture later
+  roughness: 0.3,
+  metalness: 0.0,
+  emissive: 0x111111,             // slight glow in darkness
+  emissiveIntensity: 3,
+  transparent: true,
+  side: THREE.BackSide
+});
 
   const windowMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(windowWidth, windowHeight ),
     windowMaterial
-  );
+    );
 
   // Rotate and position it perfectly inside the window cut-out
   windowMesh.rotation.y = -Math.PI / 2;
@@ -148,27 +150,21 @@ export class DinoRoom {
     this.group.add(dirLight.target);
     dirLight.castShadow = true;
     
-    // Improved shadow settings
-    // dirLight.shadow.mapSize.set(4096, 4096); // Higher resolution shadows
-    // dirLight.shadow.camera.near = 1;
-    // dirLight.shadow.camera.far = 25;
-    // dirLight.shadow.camera.left = -15;
-    // dirLight.shadow.camera.right = 15;
-    // dirLight.shadow.camera.top = 15;
-    // dirLight.shadow.camera.bottom = -15;
-    // dirLight.shadow.bias = -0.0001; // Reduce shadow acne
     
     this.group.add(dirLight);
     dirLight.layers.enableAll();
 
-    // // Additional ceiling light for general illumination
-    // const ceilingLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    // ceilingLight.position.set(0, this.roomHeight - 1, 0);
-    // ceilingLight.target.position.set(0, 0, 0);
-    // this.group.add(ceilingLight.target);
-    // ceilingLight.castShadow = false; // No shadows from ceiling light
-    // this.group.add(ceilingLight);
-    // ceilingLight.layers.enableAll();
+
+    // === ADD A CEILING LIGHT to brighten front and center ===
+const ceilingLight = new THREE.PointLight(0xffffff, 1.4, 25, 2);
+ceilingLight.position.set(0, this.roomHeight - 0.2, 0); // Just under the ceiling
+ceilingLight.castShadow = true;
+ceilingLight.shadow.mapSize.width = 1024;
+ceilingLight.shadow.mapSize.height = 1024;
+ceilingLight.shadow.bias = -0.0001;
+this.group.add(ceilingLight);
+ceilingLight.layers.enableAll();
+
 
     this.gameState = gameState;
     this.loader = new GLTFLoader();
