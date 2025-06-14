@@ -48,5 +48,5 @@ export function loadWhiteboard(scene, roomWidth, texture) {
     wrapper.add(board);
   });
 
-  return wrapper; // ✅ RETURN wrapper with .screen attached
+  return wrapper; // 
 }

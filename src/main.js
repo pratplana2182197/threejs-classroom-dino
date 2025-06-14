@@ -19,9 +19,9 @@ const CLASSROOM_BOUNDS = {
   minX: -7.2,
   maxX: 7.2,
   minY: 0.8,
-  maxY: 3.8,
-  minZ: -7.2,
-  maxZ: 7.2,
+  maxY: 5.8,
+  minZ: -6.2,
+  maxZ: 6.2,
 };
 
 const DINOROOM_BOUNDS = {
@@ -112,7 +112,11 @@ portalRendererClassroom = new PortalRenderer2D(); // will be configured at telep
 
 
   portalRendererDino.render(renderer);
-  screenMeshes = await loadClassroom(scene, gameState, portalRendererDino.getTexture());
+  const result = await loadClassroom(scene, gameState, portalRendererDino.getTexture());
+  screenMeshes = result.screenRefs;
+  const sunlight = result.sunlight;
+  const sunMesh = result.sunMesh;
+  const ceilingLights = result.ceilingLights;
   // Add DinoRoom to the scene
   scene.add(dinoRoom.mesh);
   dinoWindow = dinoRoom.mesh.getObjectByName('DinoWindow');
@@ -132,6 +136,17 @@ document.addEventListener('keydown', (e) => {
 
   if (e.code === 'ArrowDown' && !gameState.gameOver) {
     gameState.dino.ducking = true;
+  }
+
+  if (e.key === 'n' || e.key === 'N') {
+    sunlight.visible = !sunlight.visible;
+    sunMesh.visible = !sunMesh.visible;
+  }
+
+  if (e.key === 'l' || e.key === 'L') {
+    ceilingLights.forEach(light => {
+      light.visible = !light.visible;
+    });
   }
 
   if (e.code === 'KeyE') {
