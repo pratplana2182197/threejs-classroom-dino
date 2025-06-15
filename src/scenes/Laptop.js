@@ -32,13 +32,13 @@ export async function loadLaptopInstance(sharedTexture) {
       laptop.add(screenAnchor);
 
       const screen = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.575, 0.35),
+        new THREE.PlaneGeometry(0.58, 0.35),
         new THREE.MeshStandardMaterial({
           map: sharedTexture,
           side: THREE.DoubleSide,
         })
       );
-      screen.position.set(0, 0.23 + yOffset, 0.437);
+      screen.position.set(0, 0.21 + yOffset, 0.437);
       wrapper.add(screen);
       wrapper.screen = screen; // ✅ attach reference to wrapper
 
