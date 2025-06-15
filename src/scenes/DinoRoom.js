@@ -7,7 +7,7 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 export class DinoRoom {
   constructor(gameState) {
     this.group = new THREE.Group();
-    this.group.position.set(30, 0, 0);
+    this.group.position.set(0, 0, 0);
     this.group.layers.enableAll();
 
     this.roomHeight = 11;

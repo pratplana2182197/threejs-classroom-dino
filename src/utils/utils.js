@@ -44,6 +44,7 @@ export function updateTransitionOverlay(delta, renderer, scene, camera, onFinish
     const t = transitionState.timer / transitionState.half;
     overlayMaterial.opacity = Math.min(t, 1);
     if (t >= 1) {
+      if (onFinish) onFinish();
       transitionState.controls.controls.object.position.copy(transitionState.newPosition);
       transitionState.phase = 'fadeOut';
       transitionState.timer = 0;
@@ -54,7 +55,7 @@ export function updateTransitionOverlay(delta, renderer, scene, camera, onFinish
     if (t >= 1) {
       overlayMaterial.opacity = 0;
       transitionState.active = false;
-      if (onFinish) onFinish(); 
+      // if (onFinish) onFinish(); 
     }
   }
 
