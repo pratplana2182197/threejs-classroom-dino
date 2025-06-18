@@ -128,7 +128,7 @@ async function init() {
 
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
-      if (gameState.gameOver) {
+      if (gameState.gameOver && gameState.restartCooldown <= 0) {
         gameState.reset();
       } else {
         gameState.jump();
@@ -263,6 +263,8 @@ function animate() {
 
   // Main render pass - render the appropriate scene
   const activeScene = currentRoom === "classroom" ? classroomScene : dinoScene;
+  gameState.renderCollisionBoxes(dinoScene, THREE);
+
   renderer.render(activeScene, camera);
 
   updateTransitionOverlay(delta, renderer, activeScene, camera, () => {
