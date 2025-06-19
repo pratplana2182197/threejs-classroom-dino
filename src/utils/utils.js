@@ -55,7 +55,6 @@ export function updateTransitionOverlay(delta, renderer, scene, camera, onFinish
     if (t >= 1) {
       overlayMaterial.opacity = 0;
       transitionState.active = false;
-      // if (onFinish) onFinish(); 
     }
   }
 

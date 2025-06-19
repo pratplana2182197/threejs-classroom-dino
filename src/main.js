@@ -9,11 +9,10 @@ import { getLocalUVOnMesh, mapUVToMesh, startTeleportTransition,
   updateTransitionOverlay, getClosestScreen, clampCameraToBounds, updateTeleportPrompt } from './utils/utils.js';
 
 // Dual scene setup
-let classroomScene, dinoScene, camera, renderer, controls, gameState, dinoRoom;
-let portalRendererDino, portalRendererClassroom;
-let origin, destination, screenMeshes, isTeleporting = false, dinoWindow = null;
-let currentRoom = "classroom";
-let fromClassroom;
+let classroomScene, dinoScene, camera, renderer, controls, gameState, dinoRoom,
+portalRendererDino, portalRendererClassroom, origin, destination, screenMeshes,
+isTeleporting = false, dinoCanvas = null, 
+currentRoom = "classroom", fromClassroom, lightsOn = true, dinoCamPos, dinoCamTargetPos;
 
 const CLASSROOM_BOUNDS = {
   minX: -7.2,
@@ -29,8 +28,8 @@ const DINOROOM_BOUNDS = {
   maxX: 5.5,
   minY: 0.9,
   maxY: 10.8,
-  minZ: -9.8,
-  maxZ: 9.8,
+  minZ: -9.5,
+  maxZ: 9.5,
 };
 
 const clock = new THREE.Clock();
@@ -119,9 +118,11 @@ async function init() {
   const sunlight = result.sunlight;
   const sunMesh = result.sunMesh;
   const ceilingLights = result.ceilingLights;
+  const lightPanelMaterials = result.lightPanelMaterials;
+  const windowMeshes = result.windowMeshes;
 
   // Get reference to dino window for teleportation
-  dinoWindow = dinoRoom.mesh.getObjectByName('DinoWindow');
+  dinoCanvas = dinoRoom.mesh.getObjectByName('dinoCanvas');
 
   // === KEY EVENTS ===
   let lastTeleportOrigin = null;
@@ -139,17 +140,38 @@ async function init() {
       gameState.dino.ducking = true;
     }
 
-    if (e.key === 'n' || e.key === 'N') {
+    if (e.key.toLowerCase() === 'n') {
       sunlight.visible = !sunlight.visible;
       sunMesh.visible = !sunMesh.visible;
+      windowMeshes.forEach(mesh => {
+      const mat = mesh.material;
+      if (mat) {
+        mat.transparent = sunlight.visible;
+        mat.opacity = sunlight.visible ? 0.95 : 1.0;
+        mat.color.set(sunlight.visible ? 0xffffff : 0xaaaaaa);
+        mat.roughness = sunlight.visible ? 0.5 : 1.0;
+        mat.metalness = 0;
+      }
+    });
+    if (currentRoom === "dinoRoom") {
+        portalRendererClassroom.render(renderer);
+      }
     }
 
-    if (e.key === 'l' || e.key === 'L') {
+    if (e.key.toLowerCase() === 'l') {
+      lightsOn = !lightsOn;
+
       ceilingLights.forEach(light => {
-        light.visible = !light.visible;
+        light.visible = lightsOn;
       });
-    }
 
+      lightPanelMaterials.forEach(mat => {
+        mat.emissiveIntensity = lightsOn ? 0.8 : 0.01;
+      });
+      if (currentRoom === "dinoRoom") {
+        portalRendererClassroom.render(renderer);
+      }
+  }
     if (e.code === 'KeyE') {
       const prompt = document.getElementById('teleportPrompt');
       if (prompt.style.display !== 'block') return;
@@ -158,33 +180,23 @@ async function init() {
       const closestScreen = getClosestScreen(camera, screenMeshes);
       fromClassroom = currentRoom === "classroom";
 
-      origin = fromClassroom ? closestScreen : dinoWindow;
-      destination = fromClassroom ? dinoWindow : lastTeleportOrigin || closestScreen;
+      origin = fromClassroom ? closestScreen : dinoCanvas;
+      destination = fromClassroom ? dinoCanvas : lastTeleportOrigin || closestScreen;
 
       if (!origin || !destination) {
         console.warn("Teleport aborted: missing origin or destination.");
         return;
       }
 
-      // Remember last origin if entering DinoRoom
-      if (fromClassroom) lastTeleportOrigin = origin;
-
-      const offset = (destination === dinoWindow) ? -0.2 : 0.2;
+      const offset = (destination === dinoCanvas) ? -0.2 : 0.2;
       const { u, v } = getLocalUVOnMesh(origin, cameraPos);
-      let newWorldPos;
 
-      if (fromClassroom) {
-        // Going to dino room - map UV to dino room coordinates
-        newWorldPos = mapUVToMesh(destination, u, v, offset);
-        // Adjust for dino room being at origin in its own scene
-        // newWorldPos.add(new THREE.Vector3(30, 0, 0));
-      } else {
-        // Coming back to classroom
-        newWorldPos = mapUVToMesh(destination, u, v, offset);
-      }
+      let newWorldPos = mapUVToMesh(destination, u, v, offset);
+      
 
       // Setup portal rendering based on direction
       if (fromClassroom) {
+        lastTeleportOrigin = origin;
         // Render classroom view for dino window
         const viewCam = new THREE.PerspectiveCamera(50, 512 / 384, 0.1, 100);
         const originWorldPos = origin.getWorldPosition(new THREE.Vector3());
@@ -204,23 +216,13 @@ async function init() {
         origin.material.needsUpdate = true;
 
         // Update dino window texture
-        dinoWindow.material.map = portalRendererClassroom.getTexture();
-        dinoWindow.material.needsUpdate = true;
+        dinoCanvas.material.map = portalRendererClassroom.getTexture();
+        dinoCanvas.material.needsUpdate = true;
       }
 
       const targetRoom = fromClassroom ? "dinoRoom" : "classroom";
       startTeleportTransition(controls, newWorldPos, 1.5);
       isTeleporting = true;
-
-
-      // currentRoom = fromClassroom ? "dinoRoom" : "classroom";
-      
-      // Switch scene context for controls
-      // if (currentRoom === "classroom") {
-      //   controls.enable(classroomScene);
-      // } else {
-      //   controls.enable(dinoScene);
-      // }
     }
   });
 
@@ -248,9 +250,9 @@ function animate() {
 
   // Update teleport prompt based on current room
   if (currentRoom === "classroom") {
-    updateTeleportPrompt(camera, screenMeshes, currentRoom, dinoWindow);
+    updateTeleportPrompt(camera, screenMeshes, currentRoom, dinoCanvas);
   } else {
-    updateTeleportPrompt(camera, screenMeshes, currentRoom, dinoWindow);
+    updateTeleportPrompt(camera, screenMeshes, currentRoom, dinoCanvas);
   }
 
   // Render dino scene to texture for classroom screens
@@ -268,13 +270,22 @@ function animate() {
   renderer.render(activeScene, camera);
 
   updateTransitionOverlay(delta, renderer, activeScene, camera, () => {
-  isTeleporting = false;
-  // Move the room switching here - it now happens at peak white
-  currentRoom = fromClassroom ? "dinoRoom" : "classroom";
-  if (currentRoom === "classroom") {
-    controls.enable(classroomScene);
-  } else {
-    controls.enable(dinoScene);
-  }
-});
+    isTeleporting = false;
+
+    currentRoom = fromClassroom ? "dinoRoom" : "classroom";
+    if (currentRoom === "classroom") {
+      controls.enable(classroomScene);
+      dinoCamPos = new THREE.Vector3(-dinoRoom.roomWidth / 2 + 1, dinoRoom.roomHeight/2, 0);
+      dinoCamTargetPos = new THREE.Vector3(dinoRoom.roomWidth / 2, dinoRoom.roomHeight/2, 0);
+      dinoRoom.backWall.material.roughness = 0.2;
+    } else {
+      controls.enable(dinoScene);
+      dinoCamPos = new THREE.Vector3(-dinoRoom.roomWidth / 2 , dinoRoom.roomHeight -2, 0);
+      dinoCamTargetPos = new THREE.Vector3(0, dinoRoom.roomHeight/2, 0);
+      dinoRoom.backWall.material.roughness = 1;
+    }
+    dinoRoom.dirLight.position.copy(dinoCamPos);
+    dinoRoom.dirLight.target.position.copy(dinoCamTargetPos);
+    dinoRoom.backWall.material.needsUpdate = true;
+  });
 }

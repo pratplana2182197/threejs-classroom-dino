@@ -42,7 +42,7 @@ export class DinoGameState {
     
 
     // Debug rendering
-    this.showCollisionBoxes = true;
+    this.showCollisionBoxes = false;
     this.testing = false;
 
   }
@@ -215,11 +215,18 @@ export class DinoGameState {
     this.obstacles.forEach(o => o.x -= this.speed * dt);
     this.obstacles = this.obstacles.filter(o => o.x > -10);
 
+    const roomDepth = 20;
+    const repeat = 1;
+    this.floorOffset = (this.floorOffset || 0) - (this.speed * dt) / roomDepth * repeat;
+    if (this.floorOffset < 0) {
+      this.floorOffset += 1;
+    }
+
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnObstacle();
       this.spawnTimer = 0;
-      this.speed = Math.min(this.speed + 0.1, 15);
-      this.spawnInterval = Math.max(0.6, this.spawnInterval * 0.99);
+      this.speed = Math.min(this.speed + 0.2, 15);
+      this.spawnInterval = Math.max(0.4, this.spawnInterval * 0.98);
     }
 
     this.checkCollisions();

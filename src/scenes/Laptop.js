@@ -30,19 +30,27 @@ export async function loadLaptopInstance(sharedTexture) {
       screenAnchor.name = 'ScreenAnchor';
       screenAnchor.position.set(0, size.y * 0.6, -size.z * 0.05);
       laptop.add(screenAnchor);
-
+      const laptopScreenMaterial = new THREE.MeshPhysicalMaterial({
+        map: sharedTexture,
+        color: 0xffffff,
+        roughness: 0.05,
+        metalness: 0.3,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        reflectivity: 0.4,
+        emissive: 0x111111,
+        emissiveIntensity: 5,
+        side: THREE.DoubleSide,
+      });
       const screen = new THREE.Mesh(
         new THREE.PlaneGeometry(0.58, 0.35),
-        new THREE.MeshStandardMaterial({
-          map: sharedTexture,
-          side: THREE.DoubleSide,
-        })
+        laptopScreenMaterial
       );
       screen.position.set(0, 0.21 + yOffset, 0.437);
       wrapper.add(screen);
-      wrapper.screen = screen; // ✅ attach reference to wrapper
+      wrapper.screen = screen;
 
-      resolve(wrapper); // ✅ return only the wrapper
+      resolve(wrapper);
     }, undefined, reject);
   });
 }

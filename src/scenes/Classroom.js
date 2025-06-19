@@ -17,7 +17,6 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   const roomDepth = 15;     // Z axis: left to right
   const roomWidth = 13;     // X axis: front to back
   const roomHeight = 6;
-  const wallThickness = 0.1;
 
   // === Floor ===
   const floorTexture = textureLoader.load('/textures/floor_texture.jpg');
@@ -77,53 +76,9 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     classroomGroup.add(door);
   });
 
-  // // === Door Shadow Blocker (Fixed) ===
-  // const shadowBlocker = new THREE.Mesh(
-  //   new THREE.BoxGeometry(1.2, 2.5, 0.3),
-  //   new THREE.MeshStandardMaterial({ 
-  //     color: 0x000000, 
-  //     transparent: true,
-  //     opacity: 0
-  //   })
-  // );
-  // shadowBlocker.position.set(
-  //   5.95,
-  //   1.25,
-  //   -roomWidth / 2 - 0.2
-  // );
-  // shadowBlocker.castShadow = true;
-  // shadowBlocker.receiveShadow = false;
-  // classroomGroup.add(shadowBlocker);
-
-  // // === Ceiling Edge Blockers (Prevent Light Leaks) ===
-  // const ceilingBlockers = [
-  //   // Top blockers above walls to prevent light leaks
-  //   { size: [roomDepth + 2, 1, 0.3], pos: [0, roomHeight + 0.7, -roomWidth / 2 - 0.15] }, // Back wall top
-  //   { size: [roomDepth + 2, 1, 0.3], pos: [0, roomHeight + 0.7, roomWidth / 2 + 0.15] },  // Front wall top
-  //   { size: [0.3, 1, roomWidth + 2], pos: [-roomDepth / 2 - 0.15, roomHeight + 0.7, 0] }, // Left wall top
-  //   { size: [0.3, 1, roomWidth + 2], pos: [roomDepth / 2 + 0.15, roomHeight + 0.7, 0] }   // Right wall top
-  // ];
-
-  // ceilingBlockers.forEach(({ size, pos }) => {
-  //   const blocker = new THREE.Mesh(
-  //     new THREE.BoxGeometry(...size),
-  //     new THREE.MeshStandardMaterial({ 
-  //       transparent: true, 
-  //       opacity: 0,
-  //       color: 0x000000 
-  //     })
-  //   );
-  //   blocker.position.set(...pos);
-  //   blocker.castShadow = true;
-  //   blocker.receiveShadow = false;
-  //   classroomGroup.add(blocker);
-  // });
-
   // === Blinds ===
   loader.load('/models/blinds.glb', (gltf) => {
     const spacing = 3;
-    const blindWidth = 1.98;
-    const blindHeight = 2.08;
     const firstX = -roomDepth / 2 + 1;
     const blindZ = -roomWidth / 2 + 3;
     const blindY = 2;
@@ -176,6 +131,8 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   const windowZ = -roomWidth / 2 - 0.1;
   const windowY = 3.55; 
 
+  const windowMeshes = [];
+
   for (let i = 0; i < 3; i++) {
     const x = firstX + i * windowsSpacing;
     const windowMesh = new THREE.Mesh(
@@ -184,9 +141,10 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     );
     windowMesh.position.set(x, windowY, windowZ);
     classroomGroup.add(windowMesh);
+    windowMeshes.push(windowMesh);
   }
 
-  // === Ceiling with Light Panels (Keep your original settings) ===
+  // === Ceiling with Light Panels ===
   const ceilingTex = textureLoader.load('/textures/office_ceiling2.jpg');
   ceilingTex.wrapS = ceilingTex.wrapT = THREE.RepeatWrapping;
   ceilingTex.repeat.set(2, 2);
@@ -199,7 +157,7 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   });
 
   const ceiling = new THREE.Mesh(
-    new THREE.BoxGeometry(roomDepth + 1, 0.3, roomWidth + 1),
+    new THREE.BoxGeometry(roomDepth, 0.3, roomWidth),
     ceilingMaterial
   );
   ceiling.position.y = roomHeight + 0.15;
@@ -209,6 +167,8 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
 
   // === Light Panels & Lights (Keep your original settings) ===
   const ceilingLights = [];
+  const lightPanelMaterials = [];
+
 
   const gridZ = 8;
   const gridX = 8;
@@ -237,6 +197,7 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     );
     lightPanel.rotation.x = Math.PI / 2;
     lightPanel.position.set(z, roomHeight - 0.01, x);
+    lightPanelMaterials.push(lightPanel.material);
     classroomGroup.add(lightPanel);
 
     const panelLight = new THREE.PointLight(0xffffff, 12, 0);
@@ -249,10 +210,11 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     ceilingLights.push(panelLight);
   });
 
+
   // === Sunlight (Fixed Shadow Camera) ===
-  const sunlight = new THREE.DirectionalLight(0xffffff, 4.5);
+  const sunlight = new THREE.DirectionalLight(0xffffff, 7);
   sunlight.castShadow = true;
-  sunlight.position.set(-10, 25, -40);
+  sunlight.position.set(-15, 20, -40);
   sunlight.target.position.set(0, 3, 0);
   scene.add(sunlight);
   scene.add(sunlight.target);
@@ -286,6 +248,9 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   );
   sunMesh.position.copy(sunlight.position);
   scene.add(sunMesh);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); 
+  scene.add(ambientLight);
 
   // === Load Desks ===
   const deskScene = await new Promise((resolve, reject) => {
@@ -342,6 +307,8 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     screenRefs,
     sunlight,
     ceilingLights,
-    sunMesh
+    sunMesh,
+    lightPanelMaterials,
+    windowMeshes
   };
 }
