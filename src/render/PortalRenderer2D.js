@@ -5,37 +5,22 @@ export class PortalRenderer2D {
     this.width = width;
     this.height = height;
 
-    this.renderTarget = new THREE.WebGLRenderTarget(width, height, {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-      format: THREE.RGBAFormat,
-      type: THREE.UnsignedByteType,
-    });
+    this.renderTarget = new THREE.WebGLRenderTarget(width, height);
 
     this.texture = this.renderTarget.texture;
-    this.texture.needsUpdate = true;
 
     this.scene = null;
     this.camera = null;
   }
 
-  /**
-   * Set the scene to render.
-   */
   setScene(scene) {
     this.scene = scene;
   }
 
-  /**
-   * Set a custom camera to use for rendering.
-   */
   setCamera(camera) {
     this.camera = camera;
   }
 
-  /**
-   * Render the scene with the specified camera to the render target.
-   */
   render(renderer) {
     if (!this.scene || !this.camera) return;
 
@@ -45,7 +30,6 @@ export class PortalRenderer2D {
     renderer.render(this.scene, this.camera);
     renderer.setRenderTarget(prevTarget);
 
-    this.texture.needsUpdate = true;
   }
 
   getTexture() {
@@ -55,17 +39,6 @@ export class PortalRenderer2D {
   dispose() {
     this.renderTarget.dispose();
   }
-
-
-//   setNewRenderTarget() {
-//   this.renderTarget.dispose();
-//   this.renderTarget = new THREE.WebGLRenderTarget(this.width, this.height, {
-//     minFilter: THREE.LinearFilter,
-//     magFilter: THREE.LinearFilter,
-//     format: THREE.RGBAFormat,
-//     type: THREE.UnsignedByteType,
-//   });
-// }
 
 
 }

@@ -12,7 +12,6 @@ const overlayMaterial = new THREE.MeshBasicMaterial({
 const overlayQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), overlayMaterial);
 overlayScene.add(overlayQuad);
 
-// Add this at the top of utils.js
 export const transitionState = {
   active: false,
   timer: 0,
@@ -23,7 +22,6 @@ export const transitionState = {
   controls: null
 };
 
-// This replaces teleportWithFlash()
 export function startTeleportTransition(controls, newPosition, duration = 1.2) {
   transitionState.active = true;
   transitionState.timer = 0;
@@ -34,7 +32,6 @@ export function startTeleportTransition(controls, newPosition, duration = 1.2) {
   transitionState.controls = controls;
 }
 
-// Call this every frame from your main loop
 export function updateTransitionOverlay(delta, renderer, scene, camera, onFinish = null) {
   if (!transitionState.active) return;
 

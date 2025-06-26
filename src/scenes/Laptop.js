@@ -7,7 +7,6 @@ import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js
 const loader = new GLTFLoader();
 
 export async function loadLaptopInstance(sharedTexture) {
-  // RectAreaLightUniformsLib.init(); // Required to enable RectAreaLight
 
   return new Promise((resolve, reject) => {
     loader.load('/models/laptop.glb', (gltf) => {
@@ -31,34 +30,16 @@ export async function loadLaptopInstance(sharedTexture) {
       wrapper.rotation.y = -Math.PI / 2;
       wrapper.position.set(0.55, -10, 0);
 
-      const screenAnchor = new THREE.Object3D();
-      screenAnchor.name = 'ScreenAnchor';
-      screenAnchor.position.set(0, size.y * 0.6, -size.z * 0.05);
-      laptop.add(screenAnchor);
 
-      // Screen material
-      // const laptopScreenMaterial = new THREE.MeshPhysicalMaterial({
-      //   map: sharedTexture,
-      //   color: 0xffffff,
-      //   roughness: 0.05,
-      //   metalness: 0.3,
-      //   clearcoat: 1.0,
-      //   clearcoatRoughness: 0.1,
-      //   reflectivity: 0.4,
-      //   emissive: 0x222222 ,
-      //   emissiveIntensity: 0,
-      //   transparent: false,
-      //   side: THREE.FrontSide,
-      // });
-const laptopScreenMaterial = new THREE.MeshStandardMaterial({
-  map: sharedTexture,
-  emissiveMap: sharedTexture,
-  emissive: 0xffffff,
-  emissiveIntensity: 0.5,      
-  roughness: 0.2,
-  metalness: 0.1,
-  color: 0xfefefe
-});
+      const laptopScreenMaterial = new THREE.MeshStandardMaterial({
+        map: sharedTexture,
+        emissiveMap: sharedTexture,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.5,      
+        roughness: 0.2,
+        metalness: 0.1,
+        color: 0xfefefe
+      });
 
       // Screen geometry
       const screen = new THREE.Mesh(
@@ -77,7 +58,7 @@ const laptopScreenMaterial = new THREE.MeshStandardMaterial({
       rectLight.rotation.set(0, Math.PI, 0); 
 
 
-      // Visualize axes for debugging
+      // Axes for debugging
       const axesHelper = new THREE.AxesHelper(0.2);
       // rectLight.add(axesHelper);
 

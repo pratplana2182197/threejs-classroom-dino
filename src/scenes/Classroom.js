@@ -123,8 +123,6 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     roughness: 0.5,
     transmission: 1.0,
     thickness: 0.1,
-    transparent: true,
-    opacity: 0.95,
     side: THREE.DoubleSide,
     reflectivity: 0.4,
     clearcoat: 1,
@@ -172,7 +170,7 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   ceiling.castShadow = true;
   classroomGroup.add(ceiling);
 
-  // === Light Panels & Lights (Keep your original settings) ===
+  // === Light Panels & Lights ===
   const ceilingLights = [];
   const lightPanelMaterials = [];
 
@@ -215,22 +213,11 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     panelLight.shadow.camera.far = 12;
     classroomGroup.add(panelLight);
     ceilingLights.push(panelLight);
-
-
-    // const rectLight = new THREE.RectAreaLight(0xffffff, 10, tileSizeZ, tileSizeX);
-    // rectLight.position.set(z, roomHeight - 0.01, x);
-    // rectLight.rotation.x =  Math.PI / 8;
-    // classroomGroup.add(rectLight);
-    // classroomGroup.add(new RectAreaLightHelper( rectLight ) );
   });
 
-  // const rectLight = new THREE.RectAreaLight(0xffffff, 10, tileSizeZ, tileSizeX);
-  //   rectLight.position.set(1, roomHeight - 5, -roomWidth/2 +3);
-  //   rectLight.rotation.x =  Math.PI / 8;
-  //   classroomGroup.add(rectLight);
-  //   classroomGroup.add(new RectAreaLightHelper( rectLight ) );
 
-  // === Sunlight (Fixed Shadow Camera) ===
+
+  // === Sunlight ===
   const sunlight = new THREE.DirectionalLight(0xffffff, 5);
   sunlight.castShadow = true;
   sunlight.position.set(-15, 20, -40);
@@ -246,13 +233,12 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   sunlight.shadow.camera.right = halfDepth + 2;
   sunlight.shadow.camera.top = halfWidth + 2;
   sunlight.shadow.camera.bottom = -halfWidth - 2;
-
   sunlight.shadow.camera.near = 10;
   sunlight.shadow.camera.far = 100;
   sunlight.shadow.bias = -0.0001;
   sunlight.shadow.mapSize.set(2048, 2048);
 
-  // Shadow camera helper (optional - remove in production)
+  // Shadow camera helper
   const shadowHelper = new THREE.CameraHelper(sunlight.shadow.camera);
   // scene.add(shadowHelper);
 
@@ -270,13 +256,6 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); 
   scene.add(ambientLight);
-
-  //  const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  // dirLight.castShadow = false;
-  // dirLight.position.set(-0, roomHeight/2, 0);
-  // dirLight.target.position.set(0, roomHeight, 0);
-  // scene.add(dirLight);
-  // scene.add(dirLight.target);
 
   // === Load Desks ===
   const deskScene = await new Promise((resolve, reject) => {

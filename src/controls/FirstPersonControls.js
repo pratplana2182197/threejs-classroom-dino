@@ -3,7 +3,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 
 export class FirstPersonControls {
   constructor(camera, domElement) {
-    this.camera = camera;
+    this.camera = camera; 
     this.domElement = domElement;
     this.controls = new PointerLockControls(camera, domElement);
 
@@ -14,18 +14,15 @@ export class FirstPersonControls {
       right: false
     };
 
-    this.velocity = new THREE.Vector3();
     this.direction = new THREE.Vector3();
     this.speed = 10;
-
-    this.clock = new THREE.Clock();
+    this.clock = new THREE.Clock(); 
 
     this.initEvents();
   }
 
   enable(scene) {
     scene.add(this.controls.object);
-
     this.domElement.addEventListener('click', () => {
       this.controls.lock();
     });
@@ -52,33 +49,36 @@ export class FirstPersonControls {
   }
 
   update() {
-    const delta = this.clock.getDelta();
-    this.velocity.set(0, 0, 0);
+    const delta = this.clock.getDelta(); 
 
+    // Calculate movement input direction
     this.direction.z = Number(this.move.forward) - Number(this.move.back);
     this.direction.x = Number(this.move.right) - Number(this.move.left);
     this.direction.normalize();
 
     if (this.controls.isLocked) {
-  // Get current camera direction
-  const dir = new THREE.Vector3();
-  this.camera.getWorldDirection(dir); // full 3D direction
+      const forward = new THREE.Vector3();
+      this.camera.getWorldDirection(forward); 
 
-  const moveVector = new THREE.Vector3();
+      const moveVector = new THREE.Vector3();
 
-  if (this.move.forward) moveVector.add(dir);
-  if (this.move.back) moveVector.sub(dir);
+      // Apply forward/backward movement
+      if (this.move.forward) moveVector.add(forward);
+      if (this.move.back) moveVector.sub(forward);
 
-  // Get strafe direction (right vector from camera)
-  const right = new THREE.Vector3();
-  right.crossVectors(this.camera.up, dir).normalize(); // right = up × forward
+      // Compute right vector as camera.up × forward
+      const right = new THREE.Vector3();
+      right.crossVectors(this.camera.up, forward).normalize();
 
-  if (this.move.left) moveVector.add(right);
-  if (this.move.right) moveVector.sub(right);
+      // Apply left/right movement
+      if (this.move.left) moveVector.add(right);
+      if (this.move.right) moveVector.sub(right);
 
-  moveVector.normalize().multiplyScalar(this.speed * delta);
-  this.controls.object.position.add(moveVector);
-}
+      // Normalize direction and scale by speed and delta time
+      moveVector.normalize().multiplyScalar(this.speed * delta);
 
+      // Apply movement to camera
+      this.controls.object.position.add(moveVector);
+    }
   }
 }
