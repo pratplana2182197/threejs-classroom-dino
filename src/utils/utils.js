@@ -92,7 +92,7 @@ export function mapUVToMesh(mesh, u, v, offset) {
 
   const localX = box.min.x + u * size.x;
   const localY = box.min.y + v * size.y;
-  const localZ = 0; // center of plane
+  const localZ = 0;
 
   const localPos = new THREE.Vector3(localX, localY, localZ + offset);
   return mesh.localToWorld(localPos);
@@ -156,17 +156,17 @@ export function updateTeleportPrompt(camera, screenMeshes, currentRoom, dinoWind
       }
     }
   } else if (currentRoom === 'dinoRoom' && dinoWindow) {
-    const screenPos = dinoWindow.getWorldPosition(new THREE.Vector3());
-    const toScreen = screenPos.clone().sub(camPos);
-    const distance = toScreen.length();
-    const facing = camDir.dot(toScreen.clone().normalize());
+      const screenPos = dinoWindow.getWorldPosition(new THREE.Vector3());
+      const toScreen = screenPos.clone().sub(camPos);
+      const distance = toScreen.length();
+      const facing = camDir.dot(toScreen.clone().normalize());
 
-    const correctSide = camPos.x > screenPos.x;
-    const lookingLeft = camDir.x < -0.2;
+      const correctSide = camPos.x > screenPos.x;
+      const lookingLeft = camDir.x < -0.2;
 
-    if (distance < minDistance && facing > minDot && correctSide && lookingLeft) {
-      message = 'Press E to return to the classroom';
-    }
+      if (distance < minDistance && facing > minDot && correctSide && lookingLeft) {
+        message = 'Press E to return to the classroom';
+      }
   }
 
   if (message) {

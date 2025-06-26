@@ -57,15 +57,15 @@ export class PortalRenderer2D {
   }
 
 
-  setNewRenderTarget() {
-  this.renderTarget.dispose();
-  this.renderTarget = new THREE.WebGLRenderTarget(this.width, this.height, {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBAFormat,
-    type: THREE.UnsignedByteType,
-  });
-}
+//   setNewRenderTarget() {
+//   this.renderTarget.dispose();
+//   this.renderTarget = new THREE.WebGLRenderTarget(this.width, this.height, {
+//     minFilter: THREE.LinearFilter,
+//     magFilter: THREE.LinearFilter,
+//     format: THREE.RGBAFormat,
+//     type: THREE.UnsignedByteType,
+//   });
+// }
 
 
 }

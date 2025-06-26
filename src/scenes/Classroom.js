@@ -1,11 +1,18 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
+import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
+
+
 
 import { loadLaptopInstance } from './Laptop.js';
 import { loadWhiteboard } from './Whiteboard.js';
 
 export async function loadClassroom(scene, gameState, sharedTexture) {
+
+  RectAreaLightUniformsLib.init();
+
   const screenRefs = [];
   const classroomGroup = new THREE.Group();
   scene.add(classroomGroup);
@@ -161,7 +168,7 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     ceilingMaterial
   );
   ceiling.position.y = roomHeight + 0.15;
-  ceiling.receiveShadow = true;
+  ceiling.receiveShadow = false;
   ceiling.castShadow = true;
   classroomGroup.add(ceiling);
 
@@ -208,11 +215,23 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
     panelLight.shadow.camera.far = 12;
     classroomGroup.add(panelLight);
     ceilingLights.push(panelLight);
+
+
+    // const rectLight = new THREE.RectAreaLight(0xffffff, 10, tileSizeZ, tileSizeX);
+    // rectLight.position.set(z, roomHeight - 0.01, x);
+    // rectLight.rotation.x =  Math.PI / 8;
+    // classroomGroup.add(rectLight);
+    // classroomGroup.add(new RectAreaLightHelper( rectLight ) );
   });
 
+  // const rectLight = new THREE.RectAreaLight(0xffffff, 10, tileSizeZ, tileSizeX);
+  //   rectLight.position.set(1, roomHeight - 5, -roomWidth/2 +3);
+  //   rectLight.rotation.x =  Math.PI / 8;
+  //   classroomGroup.add(rectLight);
+  //   classroomGroup.add(new RectAreaLightHelper( rectLight ) );
 
   // === Sunlight (Fixed Shadow Camera) ===
-  const sunlight = new THREE.DirectionalLight(0xffffff, 7);
+  const sunlight = new THREE.DirectionalLight(0xffffff, 5);
   sunlight.castShadow = true;
   sunlight.position.set(-15, 20, -40);
   sunlight.target.position.set(0, 3, 0);
@@ -251,6 +270,13 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); 
   scene.add(ambientLight);
+
+  //  const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  // dirLight.castShadow = false;
+  // dirLight.position.set(-0, roomHeight/2, 0);
+  // dirLight.target.position.set(0, roomHeight, 0);
+  // scene.add(dirLight);
+  // scene.add(dirLight.target);
 
   // === Load Desks ===
   const deskScene = await new Promise((resolve, reject) => {

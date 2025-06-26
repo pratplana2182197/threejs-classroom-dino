@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
-import { shadow } from 'three/tsl';
 
 export class DinoRoom {
   constructor(gameState) {
@@ -33,12 +32,7 @@ export class DinoRoom {
     });
 
     const wallMaterial = new THREE.MeshBasicMaterial({ 
-      map: jungleTexture,
-      color: 0xffffff, 
-      roughness: 0.2,
-      metalness: 0.0,
-      emissive: 0x111111,
-      emissiveIntensity: 0.1
+      map: jungleTexture
     });
 
     this.backWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, this.roomHeight, roomDepth), this.backWallMaterial);
@@ -75,12 +69,7 @@ export class DinoRoom {
     skyTexture.repeat.set(1, 1);
 
     const ceilingMaterial = new THREE.MeshBasicMaterial({ 
-      map: skyTexture,
-      color: 0xffffff,
-      roughness: 0.2,
-      metalness: 0.0,
-      emissive: 0x111111,
-      emissiveIntensity: 0.1
+      map: skyTexture
     });
 
     const ceiling = new THREE.Mesh(new THREE.BoxGeometry(this.roomWidth, 0.1, roomDepth), ceilingMaterial);
@@ -141,24 +130,15 @@ export class DinoRoom {
     this.group.add(ambientLight);
 
     this.dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    this.dirLight.position.set(-this.roomWidth / 2 + 1, this.roomHeight/2, 0);
-    this.dirLight.target.position.set(this.roomWidth / 2, this.roomHeight/2, 0);
+    this.dirLight.position.set(this.roomWidth / 2 + 4, this.roomHeight/2, 0);
+    this.dirLight.target.position.set(this.roomWidth + 10, this.roomHeight/2, 0);
     this.group.add(this.dirLight.target);
     this.dirLight.castShadow = true;
     this.group.add(this.dirLight);
 
-    // const dirLight2 = new THREE.DirectionalLight(0xffffff, 2.5);
-    // dirLight2.position.set(-this.roomWidth / 2 + 20, this.roomHeight -2, 0);
-    // dirLight2.target.position.set(0, this.roomHeight/2, 0);
-    // this.group.add(dirLight2.target);
-    // dirLight2.castShadow = false;
-    // this.group.add(dirLight2);
-
 
     this.dirLight.shadow.camera.left = -roomDepth / 2;
     this.dirLight.shadow.camera.right = roomDepth / 2;
-
-
 
 
     this.gameState = gameState;
@@ -178,8 +158,15 @@ export class DinoRoom {
     // Track texture offset for smooth animation
     this.floorOffset = 0;
 
+    this.fogCubes = [];
+this.fogSpawned = false;
+
+
     this._loadAssets();
   }
+
+
+
 
   async _loadAssets() {
     if (this._assetsPromise) return this._assetsPromise;
@@ -354,6 +341,7 @@ export class DinoRoom {
       mesh.scale.setScalar(0.7);
       mesh.position.set(0, o.y, obstacleZ);
     }
+
   }
 
   get mesh() {
