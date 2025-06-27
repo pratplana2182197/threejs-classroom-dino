@@ -67,7 +67,7 @@ Welcome to **DinoClassroom**, a Three.js simulation where a classroom full of la
 
 ## 💪 Credits
 
-Developed as a final project for the Interactive Computer Graphics course implemented in Three.js.
+Developed as a final project for the Interactive Graphics course implemented in Three.js.
 
 ---
 
