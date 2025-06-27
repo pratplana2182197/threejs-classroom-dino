@@ -158,9 +158,6 @@ export class DinoRoom {
     // Track texture offset for smooth animation
     this.floorOffset = 0;
 
-    this.fogCubes = [];
-this.fogSpawned = false;
-
 
     this._loadAssets();
   }
@@ -207,28 +204,11 @@ this.fogSpawned = false;
       this.group.add(this.activeDino);
       this.activeDino.name = "dino";
 
-      this._storeBoundingSizes();
       this._updateScoreDisplay();
     })();
     return this._assetsPromise;
   }
 
-  _storeBoundingSizes() {
-    const size = (obj) => {
-      const box = new THREE.Box3().setFromObject(obj);
-      const v = new THREE.Vector3();
-      box.getSize(v);
-      return { width: v.z, height: v.y };
-    };
-    const d = this.gameState.dino;
-    Object.assign(d, size(this.models.dino));
-    Object.assign(d, {
-      duckWidth: size(this.models.dino_duck).width,
-      duckHeight: size(this.models.dino_duck).height
-    });
-    this.gameState.obstacleDimensions.cactus = size(this.models.cactus);
-    this.gameState.obstacleDimensions.bird = size(this.models.bird);
-  }
 
   _updateScoreDisplay() {
     if (!this.font) return; 
@@ -288,7 +268,7 @@ this.fogSpawned = false;
 
  _updateFloorMovement() {
   if (!this.gameState.gameOver && this.floorTexture) {
-    // Just apply the offset calculated in game state
+    // Apply the offset calculated in game state
     this.floorTexture.offset.y = this.gameState.floorOffset || 0;
   }
 }
@@ -297,9 +277,7 @@ this.fogSpawned = false;
     if (!this.font || !this.models.dino || !this.models.dino_duck) return;
     const delta = this.clock.getDelta();
     
-    // Update floor movement
     this._updateFloorMovement(delta);
-    
     this._updateScoreDisplay();
     this._handleGameOverMessage(delta);
     

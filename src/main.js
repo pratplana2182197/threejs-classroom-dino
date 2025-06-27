@@ -22,6 +22,12 @@ async function init() {
 
   stats = new Stats();
   document.getElementById('stats-box').appendChild(stats.dom);
+
+  await new Promise(resolve => requestAnimationFrame(() => {
+    requestAnimationFrame(resolve);
+  }));
+
+  document.getElementById('loading-overlay')?.remove();
 }
 
 function animate() {

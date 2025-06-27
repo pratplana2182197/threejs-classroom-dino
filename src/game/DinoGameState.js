@@ -38,125 +38,13 @@ export class DinoGameState {
 
     // Fixed timestep logic
     this._accumulator = 0;
-    this._fixedStep = 1 / 60; // 60 updates per second
+    this._fixedStep = 1 / 60;
     
 
     // Debug rendering
     this.showCollisionBoxes = false;
     this.testing = false;
 
-  }
-
-  // Get collision boxes for the dino based on current state
-  getDinoCollisionBoxes() {
-    const dino = this.dino;
-
-    if (dino.ducking) {
-      return [
-        {
-          x: -0.35,
-          y: dino.y + 0.4,
-          z: dino.x +0.22,
-          width: 0.7,
-          height: 0.55,
-          depth: 0.4,
-          label: 'head'
-        },
-        {
-          x: -0.35,
-          y: dino.y,
-          z: dino.x - 1.05,
-          width: 1.3,
-          height: 0.8,
-          depth: 0.4,
-          label: 'body'
-        },
-      ];
-    } else {
-      return [
-        {
-          x: -0.22,
-          y: dino.y + 0.85,
-          z: dino.x -0.05,
-          width: 0.7,
-          height: 0.6,
-          depth: 0.3,
-          label: 'head'
-        },
-        {
-          x: -0.22,
-          y: dino.y + 0.6,
-          z: dino.x + 0.17,
-          width: 0.2,
-          height: 0.2,
-          depth: 0.4,
-          label: 'arms'
-        },
-        {
-          x: -0.22,
-          y: dino.y +0.5,
-          z: dino.x - 0.4,
-          width: 0.6,
-          height: 0.4,
-          depth: 0.4,
-          label: 'body'
-        },
-        {
-          x: -0.22,
-          y: dino.y,
-          z: dino.x - 0.41,
-          width: 0.4,
-          height: 0.4,
-          depth: 0.4,
-          label: 'legs'
-        },
-        {
-          x: -0.22,
-          y: dino.y + 0.3,
-          z: dino.x - 0.8,
-          width: 0.4,
-          height: 0.7,
-          depth: 0.3,
-          label: 'tail'
-        }
-      ];
-    }
-  }
-
-  getObstacleCollisionBoxes(obstacle) {
-    const boxes = [];
-
-    if (obstacle.type === 'cactus') {
-      boxes.push(
-        { x: -0.14, y: obstacle.y, z: obstacle.x - 0.13, width: 0.25, height: 1.4, depth: 0.3, label: 'trunk' },
-        { x: -0.14, y: obstacle.y + 0.9, z: obstacle.x + 0.077, width: 0.4, height: 0.41, depth: 0.3, label: 'arm_right' },
-        { x: -0.14, y: obstacle.y + 0.51, z: obstacle.x - 0.48, width: 0.4, height: 0.41, depth: 0.3, label: 'arm_left' }
-
-      );
-    } else if (obstacle.type === 'bird') {
-      boxes.push(
-        { x: -0.1, y: obstacle.y + 1.18, z: obstacle.x - 0.82, width: 0.6, height: 0.4, depth: 0.2, label: 'head' },
-        { x: -0.1, y: obstacle.y + 0.8, z: obstacle.x - 0.22, width: 0.95, height: 0.4, depth: 0.15, label: 'body' }
-      );
-    }
-
-    return boxes;
-  }
-
-  getAllCollisionBoxes() {
-    const allBoxes = {
-      dino: this.getDinoCollisionBoxes(),
-      obstacles: []
-    };
-
-    this.obstacles.forEach(obstacle => {
-      allBoxes.obstacles.push({
-        obstacle: obstacle,
-        boxes: this.getObstacleCollisionBoxes(obstacle)
-      });
-    });
-
-    return allBoxes;
   }
 
   reset() {
@@ -176,6 +64,11 @@ export class DinoGameState {
     if (this.testing) {
       this.spawnTestObstacles();
     }
+    this.restartCooldown = 1.0;
+  }
+
+  setGameOver() {
+    this.gameOver = true;
     this.restartCooldown = 1.0;
   }
 
@@ -243,8 +136,7 @@ export class DinoGameState {
       y,
       type,
       width: dim.width,
-      height: dim.height,
-      yOffset: type === 'bird' ? dim.height * 0.5 : 0
+      height: dim.height
     });
   }
 
@@ -290,10 +182,6 @@ export class DinoGameState {
     }
   }
 
-  toggleCollisionBoxes() {
-    this.showCollisionBoxes = !this.showCollisionBoxes;
-    console.log(`Collision boxes: ${this.showCollisionBoxes ? 'ON' : 'OFF'}`);
-  }
 
   renderCollisionBoxes(scene, THREE) {
     scene.children = scene.children.filter(c => !c.userData.isCollisionBox);
@@ -323,34 +211,139 @@ export class DinoGameState {
     allBoxes.obstacles.forEach(o => o.boxes.forEach(box => renderBox(box, 0xff0000)));
   }
 
-spawnTestObstacles() {
-  const dinoX = this.dino.x;
-  const y = this.groundY;
 
-  this.obstacles.push(
-    {
-      x: dinoX + 3,
-      y: y + 0.5,  // bird height
-      type: 'bird',
-      width: this.obstacleDimensions.bird.width,
-      height: this.obstacleDimensions.bird.height,
-      yOffset: this.obstacleDimensions.bird.height * 0.5
-    },
-    {
-      x: dinoX + 5,
-      y: y,
-      type: 'cactus',
-      width: this.obstacleDimensions.cactus.width,
-      height: this.obstacleDimensions.cactus.height,
-      yOffset: 0
+    // Get collision boxes for the dino based on current state
+  getDinoCollisionBoxes() {
+    const dino = this.dino;
+
+    if (dino.ducking) {
+      return [
+        {
+          x: -0.35,
+          y: dino.y + 0.4,
+          z: dino.x +0.22,
+          width: 0.7,
+          height: 0.55,
+          depth: 0.4,
+          label: 'head'
+        },
+        {
+          x: -0.35,
+          y: dino.y,
+          z: dino.x - 1.05,
+          width: 1.3,
+          height: 0.8,
+          depth: 0.4,
+          label: 'body'
+        },
+      ];
+    } else {
+      return [
+        {
+          x: -0.22,
+          y: dino.y + 0.85,
+          z: dino.x -0.07,
+          width: 0.7,
+          height: 0.6,
+          depth: 0.3,
+          label: 'head'
+        },
+        {
+          x: -0.22,
+          y: dino.y + 0.6,
+          z: dino.x + 0.17,
+          width: 0.2,
+          height: 0.2,
+          depth: 0.4,
+          label: 'arms'
+        },
+        {
+          x: -0.22,
+          y: dino.y +0.5,
+          z: dino.x - 0.4,
+          width: 0.6,
+          height: 0.4,
+          depth: 0.4,
+          label: 'body'
+        },
+        {
+          x: -0.22,
+          y: dino.y,
+          z: dino.x - 0.41,
+          width: 0.4,
+          height: 0.4,
+          depth: 0.4,
+          label: 'legs'
+        },
+        {
+          x: -0.22,
+          y: dino.y + 0.3,
+          z: dino.x - 0.83,
+          width: 0.4,
+          height: 0.7,
+          depth: 0.3,
+          label: 'tail'
+        }
+      ];
     }
-  );
-}
+  }
 
+  getObstacleCollisionBoxes(obstacle) {
+    const boxes = [];
 
-setGameOver() {
-  this.gameOver = true;
-  this.restartCooldown = 1.0;
-}
+    if (obstacle.type === 'cactus') {
+      boxes.push(
+        { x: -0.14, y: obstacle.y, z: obstacle.x - 0.13, width: 0.25, height: 1.4, depth: 0.3, label: 'trunk' },
+        { x: -0.14, y: obstacle.y + 0.9, z: obstacle.x + 0.077, width: 0.4, height: 0.41, depth: 0.3, label: 'arm_right' },
+        { x: -0.14, y: obstacle.y + 0.51, z: obstacle.x - 0.48, width: 0.4, height: 0.41, depth: 0.3, label: 'arm_left' }
+
+      );
+    } else if (obstacle.type === 'bird') {
+      boxes.push(
+        { x: -0.1, y: obstacle.y + 1.18, z: obstacle.x - 0.82, width: 0.6, height: 0.4, depth: 0.2, label: 'head' },
+        { x: -0.1, y: obstacle.y + 0.8, z: obstacle.x - 0.22, width: 0.95, height: 0.4, depth: 0.15, label: 'body' }
+      );
+    }
+
+    return boxes;
+  }
+
+  getAllCollisionBoxes() {
+    const allBoxes = {
+      dino: this.getDinoCollisionBoxes(),
+      obstacles: []
+    };
+
+    this.obstacles.forEach(obstacle => {
+      allBoxes.obstacles.push({
+        obstacle: obstacle,
+        boxes: this.getObstacleCollisionBoxes(obstacle)
+      });
+    });
+
+    return allBoxes;
+  }
+
+  spawnTestObstacles() {
+    const dinoX = this.dino.x;
+    const y = this.groundY;
+
+    this.obstacles.push(
+      {
+        x: dinoX + 3,
+        y: y + 0.5,  // bird height
+        type: 'bird',
+        width: this.obstacleDimensions.bird.width,
+        height: this.obstacleDimensions.bird.height
+      },
+      {
+        x: dinoX + 5,
+        y: y,
+        type: 'cactus',
+        width: this.obstacleDimensions.cactus.width,
+        height: this.obstacleDimensions.cactus.height
+      }
+    );
+  }
 
 }
