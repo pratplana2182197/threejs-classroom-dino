@@ -47,8 +47,6 @@ canvas {
 #spinner-img {
   width: 40px;
   height: 40px;
-  pointer-events: none;
-  user-select: none;
 }
 
 @keyframes spin {
