@@ -15,7 +15,7 @@ export class FirstPersonControls {
     };
 
     this.direction = new THREE.Vector3();
-    this.speed = 10;
+    this.speed = 7;
     this.clock = new THREE.Clock(); 
 
     this.initEvents();
