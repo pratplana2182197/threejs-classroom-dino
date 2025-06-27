@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
@@ -22,7 +21,7 @@ export async function loadLaptopInstance(sharedTexture) {
       laptop.position.set(-center.x, -box.min.y + yOffset, -center.z);
 
       const targetWidth = 0.6;
-      const scale = targetWidth / size.x;
+      const scale = targetWidth / size.x / 1.5;
       laptop.scale.setScalar(scale);
 
       const wrapper = new THREE.Group();
@@ -43,18 +42,18 @@ export async function loadLaptopInstance(sharedTexture) {
 
       // Screen geometry
       const screen = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.58, 0.35),
+        new THREE.PlaneGeometry(0.58 / 1.5, 0.34 / 1.5),
         laptopScreenMaterial
       );
-      screen.position.set(0, 0.21 + yOffset, 0.437);
+      screen.position.set(0, 0.14 + yOffset, 0.509);
       wrapper.add(screen);
       wrapper.screen = screen;
 
-      const rectLight = new THREE.RectAreaLight(0xffffff, 5, 0.58, 0.35);
+      const rectLight = new THREE.RectAreaLight(0xffffff, 5, 0.58, 0.34);
 
       // Position: same as screen + slightly in front (Z direction in screen local space)
       rectLight.position.copy(screen.position);
-      rectLight.position.z +=  - 0.001; 
+      rectLight.position.z +=  - 0.0005; 
       rectLight.rotation.set(0, Math.PI, 0); 
 
 

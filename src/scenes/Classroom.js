@@ -261,6 +261,8 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   const deskScene = await new Promise((resolve, reject) => {
     loader.load(modelPath, gltf => resolve(gltf.scene), undefined, reject);
   });
+
+  deskScene.scale.setScalar(1.5);
   const deskBox = new THREE.Box3().setFromObject(deskScene);
   const minY = deskBox.min.y;
 
@@ -290,7 +292,7 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
       const deskTopY = deskBox.max.y - deskClone.position.y;
 
       const laptopPromise = loadLaptopInstance(sharedTexture).then((laptop) => {
-        laptop.position.y = deskTopY;
+        laptop.position.y = deskTopY - 0.27;
         laptop.castShadow = true;
         laptop.receiveShadow = true;
         deskClone.add(laptop);

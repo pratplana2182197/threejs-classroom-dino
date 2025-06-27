@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
+
 
 const loader = new GLTFLoader();
 
@@ -12,11 +14,12 @@ export function loadWhiteboard(scene, roomWidth, texture) {
   const screenMaterial = texture
     ? new THREE.MeshStandardMaterial({
         map: texture,
-        color: 0xffffff,
+        emissiveMap: texture,
+        color: 0xfefefe,
         roughness: 0.3,
         metalness: 0.1,
-        emissive: 0x111111,
-        emissiveIntensity: 0.1,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.5,
         side: THREE.DoubleSide,
       })
     : new THREE.MeshStandardMaterial({
@@ -46,6 +49,21 @@ export function loadWhiteboard(scene, roomWidth, texture) {
     board.position.set(-center.x, -box.min.y, -center.z);
 
     wrapper.add(board);
+
+    const rectLight = new THREE.RectAreaLight(0xffffff, 5, 2.4, 1.5);
+
+    rectLight.position.copy(screen.position);
+    rectLight.position.z +=  - 0.0005; 
+    rectLight.rotation.set(0, Math.PI, 0); 
+
+
+    // Axes for debugging
+    const axesHelper = new THREE.AxesHelper(0.2);
+    // rectLight.add(axesHelper);
+
+    // Add to wrapper
+    wrapper.add(rectLight);
+    wrapper.add( new RectAreaLightHelper( rectLight ) );
   });
 
   return wrapper; // 
