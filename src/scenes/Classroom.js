@@ -229,13 +229,13 @@ export async function loadClassroom(scene, gameState, sharedTexture) {
   const halfDepth = roomDepth / 2;
   const halfWidth = roomWidth / 2;
 
-  sunlight.shadow.camera.left = -halfDepth - 2;
-  sunlight.shadow.camera.right = halfDepth + 2;
-  sunlight.shadow.camera.top = halfWidth + 2;
-  sunlight.shadow.camera.bottom = -halfWidth - 2;
+  sunlight.shadow.camera.left = -halfDepth - 4;
+  sunlight.shadow.camera.right = halfDepth + 4;
+  sunlight.shadow.camera.top = halfWidth + 3;
+  sunlight.shadow.camera.bottom = -halfWidth - 3;
   sunlight.shadow.camera.near = 10;
-  sunlight.shadow.camera.far = 100;
-  sunlight.shadow.bias = -0.0001;
+  sunlight.shadow.camera.far = 60;
+  sunlight.shadow.bias = 0.05;
   sunlight.shadow.mapSize.set(2048, 2048);
 
   // Shadow camera helper

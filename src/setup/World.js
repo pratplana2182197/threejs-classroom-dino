@@ -100,14 +100,15 @@ export class World {
   }
 
   toggleSunlight(currentRoom) {
-    this.sunlight.visible = !this.sunlight.visible;
-    this.sunMesh.visible = !this.sunMesh.visible;
+    const isOn = this.sunlight.intensity > 0;
+    this.sunlight.intensity = isOn ? 0 : 5; 
+    this.sunMesh.visible = !isOn;
 
     this.windowMeshes.forEach(mesh => {
       const mat = mesh.material;
       if (!mat) return;
-      mat.color.set(this.sunlight.visible ? 0xffffff : 0xaaaaaa);
-      mat.roughness = this.sunlight.visible ? 0.5 : 1;
+      mat.color.set(!isOn ? 0xffffff : 0xaaaaaa);
+      mat.roughness = !isOn ? 0.5 : 1;
     });
 
     if (currentRoom === 'dinoRoom') {
@@ -117,7 +118,7 @@ export class World {
 
   toggleLights(currentRoom) {
     this.lightsOn = !this.lightsOn;
-    this.ceilingLights.forEach(l => l.visible = this.lightsOn);
+    this.ceilingLights.forEach(l => l.intensity = this.lightsOn ? 12 : 0);
     this.lightPanelMaterials.forEach(m => m.emissiveIntensity = this.lightsOn ? 0.8 : 0.01);
 
     if (currentRoom === 'dinoRoom') {
