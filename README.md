@@ -1,6 +1,6 @@
 # 🦖 DinoClassroom: The No-Internet Dinosaur Portal Game
 
-Welcome to **DinoClassroom**, a Three.js simulation where a classroom full of students with no internet has one thing left to do: play the offline Dinosaur game. But there's a twist — you can walk up to a laptop or whiteboard and **enter** the game through a 3D portal, experiencing it from inside while the classroom keeps running in sync!
+Welcome to **DinoClassroom**, a Three.js simulation where a classroom full of laptops with no internet has one thing left to do: play the offline Dinosaur game. But there's a twist — you can walk up to a laptop or whiteboard and **enter** the game through a 3D portal, experiencing it from inside while the classroom keeps running in sync!
 
 ---
 
