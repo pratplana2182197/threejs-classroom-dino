@@ -9,7 +9,7 @@ Welcome to **DinoClassroom**, a Three.js simulation where a classroom full of st
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/pratplana2182197/threejs-classroom-dino.git
-   cd dinoclassroom
+   cd threejs-classroom-dino
    ```
 
 2. **Install dependencies** (requires [Node.js](https://nodejs.org/)):
